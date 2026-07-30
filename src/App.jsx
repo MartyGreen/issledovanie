@@ -118,22 +118,25 @@ const popularTagsByOwner = {
 
 const defaultPopularTags = ['ORACLE', 'DOCUMENT', 'ЭДО', 'Документооборот', 'ЭПД', 'DWH', 'ETL', 'Метрики']
 
+/* ===== Base URL helper ===== */
+const base = import.meta.env.BASE_URL
+
 /* ===== Sidebar ===== */
 const mainMenuItems = [
-  { icon: '/assets/icon-document-book.svg', label: 'Документация', active: true, badge: 5 },
-  { icon: '/assets/icon-person.svg', label: 'Команда' },
-  { icon: '/assets/icon-integration.svg', label: 'Сессия' },
-  { icon: '/assets/icon-file.svg', label: 'Загрузчик файлов' },
-  { icon: '/assets/icon-check-circle.svg', label: 'Bi-API методы' },
-  { icon: '/assets/icon-upload-arrow.svg', label: 'Управление загрузками' },
-  { icon: '/assets/icon-pencil.svg', label: 'Редактор SQL' },
+  { icon: `${base}assets/icon-document-book.svg`, label: 'Документация', active: true, badge: 5 },
+  { icon: `${base}assets/icon-person.svg`, label: 'Команда' },
+  { icon: `${base}assets/icon-integration.svg`, label: 'Сессия' },
+  { icon: `${base}assets/icon-file.svg`, label: 'Загрузчик файлов' },
+  { icon: `${base}assets/icon-check-circle.svg`, label: 'Bi-API методы' },
+  { icon: `${base}assets/icon-upload-arrow.svg`, label: 'Управление загрузками' },
+  { icon: `${base}assets/icon-pencil.svg`, label: 'Редактор SQL' },
 ]
 
-const mapItem = { icon: '/assets/icon-layout-grid.svg', label: 'Карта сервисов' }
+const mapItem = { icon: `${base}assets/icon-layout-grid.svg`, label: 'Карта сервисов' }
 
 const bottomItems = [
-  { icon: '/assets/icon-document-book-2.svg', label: 'Есть идея' },
-  { icon: '/assets/icon-help-circle.svg', label: 'Нужна помощь' },
+  { icon: `${base}assets/icon-document-book-2.svg`, label: 'Есть идея' },
+  { icon: `${base}assets/icon-help-circle.svg`, label: 'Нужна помощь' },
 ]
 
 function Sidebar() {
@@ -147,7 +150,7 @@ function Sidebar() {
       </div>
 
       <div className="sidebar-logo">
-        <img src="/assets/logo.svg" alt="DataGate" />
+        <img src={`${base}assets/logo.svg`} alt="DataGate" />
       </div>
 
       <nav className="sidebar-nav">
@@ -185,7 +188,7 @@ function Sidebar() {
 
           <button className="sidebar-user">
             <div className="sidebar-avatar">
-              <img src="/assets/avatar-cat.jpg" alt="Avatar" />
+              <img src={`${base}assets/avatar-cat.jpg`} alt="Avatar" />
             </div>
             <span className="sidebar-user-name">Никита Сокол</span>
           </button>
