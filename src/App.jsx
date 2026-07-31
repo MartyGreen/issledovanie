@@ -2,20 +2,40 @@ import { useState, useRef, useEffect } from 'react'
 import html2canvas from 'html2canvas'
 import './index.css'
 
-/* ===== Google Sheets Integration ===== */
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbw3j7D2Axu8_1aIWjsH2zKOyd1x1_K9EWLA7KrNbebmGdlX9Afl_HYiI61tJjpPX_-DZQ/exec'
+/* ===== CSV Export ===== */
+function exportParticipantsCSV() {
+  const participants = JSON.parse(localStorage.getItem('research_participants') || '[]')
+  if (participants.length === 0) return
 
-function sendToSheet(data) {
-  try {
-    fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+  const surveyHeaders = ['ease_of_use', 'ai_attitude', 'llm_usage', 'improvements', 'unclear']
+  const headers = ['№', 'Имя', 'Фамилия', 'Грейд', 'Должность', 'Дата регистрации', 'Кликов', 'Длительность сессии (сек)', ...surveyHeaders.map(h => `Опросник: ${h}`)]
+
+  const rows = participants.map((p, i) => {
+    const surveyValues = surveyHeaders.map(h => {
+      const val = p.surveyAnswers?.[h] || ''
+      return `"${String(val).replace(/"/g, '""')}"`
     })
-  } catch (err) {
-    console.warn('Ошибка отправки в Google Sheets:', err)
-  }
+    return [
+      i + 1,
+      `"${(p.firstName || '').replace(/"/g, '""')}"`,
+      `"${(p.lastName || '').replace(/"/g, '""')}"`,
+      `"${(p.grade || '').replace(/"/g, '""')}"`,
+      `"${(p.position || '').replace(/"/g, '""')}"`,
+      `"${(p.registeredAt || '').replace(/"/g, '""')}"`,
+      p.totalClicks || 0,
+      p.sessionDuration ? Math.round(p.sessionDuration / 1000) : 0,
+      ...surveyValues,
+    ].join(',')
+  })
+
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `research_participants_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 /* ===== SVG Иконки (inline) ===== */
@@ -655,8 +675,6 @@ function RegistrationPage({ onComplete, onSkipToMain }) {
     localStorage.setItem('research_participants', JSON.stringify(existing))
     // Сохраняем текущего пользователя
     localStorage.setItem('research_current_user', JSON.stringify(participant))
-    // Отправляем в Google Sheets
-    sendToSheet({ ...participant, type: 'registration' })
     onComplete(participant)
   }
 
@@ -944,11 +962,18 @@ function AdminPage({ onBack }) {
           <div className="form-container">
             <div className="admin-header">
               <span className="admin-count">Всего: {participants.length}</span>
-              {participants.length > 0 && (
-                <button className="admin-clear-btn" onClick={clearAll}>
-                  Очистить всё
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {participants.length > 0 && (
+                  <button className="admin-clear-btn" style={{ background: 'var(--color-brand)', color: '#fff', border: 'none' }} onClick={exportParticipantsCSV}>
+                    📥 Скачать CSV
+                  </button>
+                )}
+                {participants.length > 0 && (
+                  <button className="admin-clear-btn" onClick={clearAll}>
+                    Очистить всё
+                  </button>
+                )}
+              </div>
             </div>
 
             {participants.length === 0 ? (
@@ -1451,15 +1476,6 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
       }
     }
 
-    // Отправляем данные сессии в Google Sheets
-    sendToSheet({
-      ...sessionData.user,
-      type: 'session',
-      totalClicks: sessionData.totalClicks,
-      sessionDuration: Math.round(sessionData.sessionDuration / 1000),
-      formData: sessionData.formData,
-    })
-
     if (resetClicks) resetClicks()
     setSavedClicksCount(clicks.length)
     setSavedSessionDuration(clicks.length > 0 ? Math.round(clicks[clicks.length - 1].ts / 1000) : 0)
@@ -1477,12 +1493,6 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         localStorage.setItem('research_participants', JSON.stringify(participants))
       }
     }
-    // Отправляем ответы опросника в Google Sheets
-    sendToSheet({
-      ...(currentUser || {}),
-      type: 'survey',
-      surveyAnswers: answers,
-    })
     setShowSurvey(false)
     alert(`Спасибо за участие в исследовании!\nЗаписано кликов: ${savedClicksCount}\nДлительность сессии: ${savedSessionDuration} сек`)
   }
