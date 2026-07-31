@@ -2,6 +2,22 @@ import { useState, useRef, useEffect } from 'react'
 import html2canvas from 'html2canvas'
 import './index.css'
 
+/* ===== Google Sheets Integration ===== */
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbw3j7D2Axu8_1aIWjsH2zKOyd1x1_K9EWLA7KrNbebmGdlX9Afl_HYiI61tJjpPX_-DZQ/exec'
+
+function sendToSheet(data) {
+  try {
+    fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  } catch (err) {
+    console.warn('Ошибка отправки в Google Sheets:', err)
+  }
+}
+
 /* ===== SVG Иконки (inline) ===== */
 const ChevronDown = ({ className }) => (
   <svg className={className} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -639,6 +655,8 @@ function RegistrationPage({ onComplete, onSkipToMain }) {
     localStorage.setItem('research_participants', JSON.stringify(existing))
     // Сохраняем текущего пользователя
     localStorage.setItem('research_current_user', JSON.stringify(participant))
+    // Отправляем в Google Sheets
+    sendToSheet({ ...participant, type: 'registration' })
     onComplete(participant)
   }
 
@@ -1433,6 +1451,15 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
       }
     }
 
+    // Отправляем данные сессии в Google Sheets
+    sendToSheet({
+      ...sessionData.user,
+      type: 'session',
+      totalClicks: sessionData.totalClicks,
+      sessionDuration: Math.round(sessionData.sessionDuration / 1000),
+      formData: sessionData.formData,
+    })
+
     if (resetClicks) resetClicks()
     setSavedClicksCount(clicks.length)
     setSavedSessionDuration(clicks.length > 0 ? Math.round(clicks[clicks.length - 1].ts / 1000) : 0)
@@ -1450,6 +1477,12 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         localStorage.setItem('research_participants', JSON.stringify(participants))
       }
     }
+    // Отправляем ответы опросника в Google Sheets
+    sendToSheet({
+      ...(currentUser || {}),
+      type: 'survey',
+      surveyAnswers: answers,
+    })
     setShowSurvey(false)
     alert(`Спасибо за участие в исследовании!\nЗаписано кликов: ${savedClicksCount}\nДлительность сессии: ${savedSessionDuration} сек`)
   }
