@@ -219,7 +219,7 @@ const bottomItems = [
   { icon: `${base}assets/icon-help-circle.svg`, label: 'Нужна помощь' },
 ]
 
-function Sidebar({ onIdeaClick, currentPage, userName, onLogoClick }) {
+function Sidebar({ onIdeaClick, currentPage, userName, onLogoClick, onLogout }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-top-bar">
@@ -278,6 +278,11 @@ function Sidebar({ onIdeaClick, currentPage, userName, onLogoClick }) {
               <img src={`${base}assets/avatar-cat.jpg`} alt="Avatar" />
             </div>
             <span className="sidebar-user-name">{userName || 'Никита Сокол'}</span>
+            {onLogout && (
+              <span className="sidebar-logout-btn" onClick={(e) => { e.stopPropagation(); onLogout() }} title="Выйти и пройти тест заново">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#949494" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </span>
+            )}
           </button>
         </div>
       </nav>
@@ -1580,7 +1585,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
 
   return (
     <div className="layout">
-      <Sidebar onIdeaClick={onGoToAdmin} onLogoClick={onLogoClick} userName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : undefined} />
+      <Sidebar onIdeaClick={onGoToAdmin} onLogoClick={onLogoClick} onLogout={onLogoClick} userName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : undefined} />
       <div className="main-area">
         <main className="main-content">
           <div className="navbar">

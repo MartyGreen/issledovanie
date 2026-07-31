@@ -319,6 +319,27 @@ body {
   object-fit: cover;
 }
 
+.sidebar-logout-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.sidebar-logout-btn:hover {
+  background: var(--color-bg-field);
+  opacity: 1;
+}
+.sidebar-logout-btn:hover svg path {
+  stroke: var(--color-brand);
+}
+
 .sidebar-user-name {
   font-size: 14px;
   font-weight: 500;
