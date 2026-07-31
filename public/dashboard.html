@@ -142,6 +142,27 @@
   }
 
   .last-updated { font-size: 12px; color: #86868b; margin-top: 8px; }
+
+  /* Confirm modal */
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+    animation: fadeIn 0.15s ease;
+  }
+  .confirm-box {
+    background: #fff; border-radius: 16px; padding: 32px;
+    max-width: 400px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: scaleIn 0.15s ease;
+  }
+  .confirm-icon { font-size: 48px; margin-bottom: 16px; }
+  .confirm-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #1d1d1f; }
+  .confirm-text { font-size: 14px; color: #86868b; margin-bottom: 24px; line-height: 1.5; }
+  .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+  .confirm-actions .btn { min-width: 120px; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
 </head>
 <body>
@@ -234,7 +255,6 @@ function render() {
       <div class="header-actions">
         <button class="btn btn-secondary" onclick="refreshData()">🔄 Обновить</button>
         <button class="btn btn-primary" onclick="exportCSV()">📥 Скачать CSV</button>
-        ${stats.total > 0 ? '<button class="btn btn-danger" onclick="deleteAll()">🗑 Удалить всё</button>' : ''}
       </div>
     </div>
 
@@ -486,34 +506,50 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 
-async function deleteParticipant(index) {
+function showConfirmModal(name, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  overlay.innerHTML = `
+    <div class="confirm-box">
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-title">Удалить участника?</div>
+      <div class="confirm-text">Вы собираетесь удалить <strong>${name}</strong>.<br>Это действие нельзя отменить.</div>
+      <div class="confirm-actions">
+        <button class="btn btn-secondary" id="confirm-cancel">Отмена</button>
+        <button class="btn btn-danger" id="confirm-delete">🗑 Удалить</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#confirm-cancel').onclick = () => overlay.remove();
+  overlay.querySelector('#confirm-delete').onclick = async () => {
+    overlay.querySelector('#confirm-delete').textContent = 'Удаление...';
+    overlay.querySelector('#confirm-delete').disabled = true;
+    await onConfirm();
+    overlay.remove();
+  };
+}
+
+function deleteParticipant(index) {
   const p = participants[index];
   if (!p || !p._key) return;
   const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'участника';
-  if (!confirm(`Удалить ${name}? Это действие нельзя отменить.`)) return;
-  try {
-    const res = await fetch(`${FIREBASE_DB_URL}/participants/${p._key}.json`, { method: 'DELETE' });
-    if (!res.ok) throw new Error(res.statusText);
-    participants.splice(index, 1);
-    // Close modal if open
-    document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
-    render();
-  } catch (err) {
-    alert('Ошибка удаления: ' + err.message);
-  }
-}
 
-async function deleteAll() {
-  if (!confirm(`Удалить ВСЕХ участников (${participants.length})? Это действие нельзя отменить!`)) return;
-  if (!confirm('Вы точно уверены? Все данные исследования будут потеряны навсегда.')) return;
-  try {
-    const res = await fetch(`${FIREBASE_DB_URL}/participants.json`, { method: 'DELETE' });
-    if (!res.ok) throw new Error(res.statusText);
-    participants = [];
-    render();
-  } catch (err) {
-    alert('Ошибка удаления: ' + err.message);
-  }
+  showConfirmModal(name, async () => {
+    try {
+      const res = await fetch(`${FIREBASE_DB_URL}/participants/${p._key}.json`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(res.statusText);
+      participants.splice(index, 1);
+      document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
+      render();
+    } catch (err) {
+      alert('Ошибка удаления: ' + err.message);
+    }
+  });
 }
 
 async function refreshData() {
