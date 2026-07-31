@@ -1623,6 +1623,18 @@ body {
 }
 
 /* Секретная кнопка-билетик для админов */
+/* Секретная ссылка на дашборд — невидимая зона 20x20 в правом верхнем углу */
+.secret-dash-link {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  z-index: 9999;
+  cursor: default;
+  opacity: 0;
+}
+
 .admin-ticket-btn {
   position: fixed;
   bottom: 20px;
