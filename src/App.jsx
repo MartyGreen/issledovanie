@@ -1590,6 +1590,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         <main className="main-content">
           <div className="navbar">
             <h1 className="navbar-title">Новый документ</h1>
+            <a href={`${import.meta.env.BASE_URL}dashboard.html`} target="_blank" rel="noopener noreferrer" style={{ position: 'absolute', top: 0, right: 0, width: 48, height: 48, cursor: 'default', zIndex: 10 }} aria-hidden="true" tabIndex={-1} />
           </div>
 
           <div className="form-container">
