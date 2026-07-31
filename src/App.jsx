@@ -2,9 +2,52 @@ import { useState, useRef, useEffect } from 'react'
 import html2canvas from 'html2canvas'
 import './index.css'
 
+/* ===== Firebase Realtime Database (REST API) ===== */
+const FIREBASE_DB_URL = 'https://datagatetest-4f190-default-rtdb.firebaseio.com'
+
+async function firebasePush(path, data) {
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    const result = await res.json()
+    return result?.name // returns the generated key
+  } catch (err) {
+    console.warn('Firebase push failed:', err)
+    return null
+  }
+}
+
+async function firebaseUpdate(path, data) {
+  try {
+    await fetch(`${FIREBASE_DB_URL}/${path}.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+  } catch (err) {
+    console.warn('Firebase update failed:', err)
+  }
+}
+
+async function firebaseFetchAll(path) {
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/${path}.json`)
+    const data = await res.json()
+    if (!data) return []
+    // Firebase returns {key1: {...}, key2: {...}} — convert to array
+    return Object.entries(data).map(([key, val]) => ({ ...val, _firebaseKey: key }))
+  } catch (err) {
+    console.warn('Firebase fetch failed:', err)
+    return []
+  }
+}
+
 /* ===== CSV Export ===== */
-function exportParticipantsCSV() {
-  const participants = JSON.parse(localStorage.getItem('research_participants') || '[]')
+function exportParticipantsCSV(participantsArg) {
+  const participants = participantsArg || JSON.parse(localStorage.getItem('research_participants') || '[]')
   if (participants.length === 0) return
 
   const surveyHeaders = ['ease_of_use', 'ai_attitude', 'llm_usage', 'improvements', 'unclear']
@@ -675,6 +718,13 @@ function RegistrationPage({ onComplete, onSkipToMain }) {
     localStorage.setItem('research_participants', JSON.stringify(existing))
     // Сохраняем текущего пользователя
     localStorage.setItem('research_current_user', JSON.stringify(participant))
+    // Отправляем в Firebase
+    firebasePush('participants', participant).then(fbKey => {
+      if (fbKey) {
+        participant._firebaseKey = fbKey
+        localStorage.setItem('research_current_user', JSON.stringify(participant))
+      }
+    })
     onComplete(participant)
   }
 
@@ -914,10 +964,20 @@ const surveyQuestions = [
 function AdminPage({ onBack }) {
   const [participants, setParticipants] = useState([])
   const [expandedId, setExpandedId] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('research_participants') || '[]')
-    setParticipants(data)
+    // Загружаем из Firebase (централизованное хранилище)
+    firebaseFetchAll('participants').then(fbData => {
+      if (fbData.length > 0) {
+        setParticipants(fbData)
+      } else {
+        // Fallback на localStorage
+        const data = JSON.parse(localStorage.getItem('research_participants') || '[]')
+        setParticipants(data)
+      }
+      setLoading(false)
+    })
   }, [])
 
   const clearAll = () => {
@@ -964,7 +1024,7 @@ function AdminPage({ onBack }) {
               <span className="admin-count">Всего: {participants.length}</span>
               <div style={{ display: 'flex', gap: 8 }}>
                 {participants.length > 0 && (
-                  <button className="admin-clear-btn" style={{ background: 'var(--color-brand)', color: '#fff', border: 'none' }} onClick={exportParticipantsCSV}>
+                  <button className="admin-clear-btn" style={{ background: 'var(--color-brand)', color: '#fff', border: 'none' }} onClick={() => exportParticipantsCSV(participants)}>
                     📥 Скачать CSV
                   </button>
                 )}
@@ -1476,6 +1536,17 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
       }
     }
 
+    // Отправляем в Firebase (без скриншота — он слишком большой)
+    if (currentUser?._firebaseKey) {
+      firebaseUpdate(`participants/${currentUser._firebaseKey}`, {
+        clickMap: clicks,
+        totalClicks: clicks.length,
+        sessionDuration: clicks.length > 0 ? clicks[clicks.length - 1].ts : 0,
+        formData: sessionData.formData,
+        savedAt: sessionData.savedAt,
+      })
+    }
+
     if (resetClicks) resetClicks()
     setSavedClicksCount(clicks.length)
     setSavedSessionDuration(clicks.length > 0 ? Math.round(clicks[clicks.length - 1].ts / 1000) : 0)
@@ -1492,6 +1563,13 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         participants[idx].surveyCompletedAt = new Date().toISOString()
         localStorage.setItem('research_participants', JSON.stringify(participants))
       }
+    }
+    // Обновляем в Firebase
+    if (currentUser?._firebaseKey) {
+      firebaseUpdate(`participants/${currentUser._firebaseKey}`, {
+        surveyAnswers: answers,
+        surveyCompletedAt: new Date().toISOString(),
+      })
     }
     setShowSurvey(false)
     alert(`Спасибо за участие в исследовании!\nЗаписано кликов: ${savedClicksCount}\nДлительность сессии: ${savedSessionDuration} сек`)
