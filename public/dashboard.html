@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 Дашборд исследования</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  .dashboard { max-width: 1200px; margin: 0 auto; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
+  }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .header-actions { display: flex; gap: 10px; }
+
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 10px;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-primary { background: #835de1; color: #fff; }
+  .btn-primary:hover { background: #7249d1; }
+  .btn-secondary { background: #e8e8ed; color: #1d1d1f; }
+  .btn-secondary:hover { background: #d2d2d7; }
+  .btn-danger { background: #ff3b30; color: #fff; }
+  .btn-danger:hover { background: #d62f26; }
+
+  /* Stats Cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: #fff; border-radius: 16px; padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .stat-label { font-size: 13px; color: #86868b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 36px; font-weight: 700; color: #1d1d1f; }
+  .stat-value.brand { color: #835de1; }
+  .stat-value.green { color: #34c759; }
+  .stat-value.orange { color: #ff9500; }
+
+  /* Table */
+  .table-card {
+    background: #fff; border-radius: 16px; padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 24px;
+  }
+  .table-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 600;
+    color: #86868b; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 2px solid #f0f0f2;
+  }
+  tbody td {
+    padding: 14px; font-size: 14px; border-bottom: 1px solid #f5f5f7;
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #fafafa; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+  }
+  .badge-purple { background: rgba(131,93,225,0.12); color: #835de1; }
+  .badge-green { background: rgba(52,199,89,0.12); color: #28a745; }
+  .badge-gray { background: #f0f0f2; color: #86868b; }
+
+  /* Survey answers inline */
+  .survey-answers { font-size: 13px; color: #555; line-height: 1.6; }
+  .survey-answers strong { color: #1d1d1f; }
+
+  /* Click summary */
+  .click-info { font-size: 13px; color: #86868b; }
+  .click-count { font-weight: 600; color: #835de1; }
+
+  /* Loading */
+  .loading {
+    text-align: center; padding: 80px 20px; color: #86868b; font-size: 16px;
+  }
+  .loading .spinner {
+    width: 40px; height: 40px; border: 3px solid #e8e8ed;
+    border-top-color: #835de1; border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; color: #86868b; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* Detail modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; padding: 20px;
+  }
+  .modal {
+    background: #fff; border-radius: 20px; max-width: 700px; width: 100%;
+    max-height: 85vh; overflow-y: auto; padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .modal h2 { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+  .modal-close {
+    float: right; background: #f0f0f2; border: none; width: 32px; height: 32px;
+    border-radius: 50%; cursor: pointer; font-size: 16px; transition: background 0.15s;
+  }
+  .modal-close:hover { background: #d2d2d7; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .detail-item { background: #f9f9fb; border-radius: 10px; padding: 14px; }
+  .detail-label { font-size: 12px; color: #86868b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+  .detail-value { font-size: 15px; font-weight: 500; color: #1d1d1f; }
+
+  .survey-section { margin-top: 20px; }
+  .survey-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .survey-item { background: #f9f9fb; border-radius: 10px; padding: 14px; margin-bottom: 8px; }
+  .survey-q { font-size: 13px; color: #86868b; margin-bottom: 4px; }
+  .survey-a { font-size: 15px; color: #1d1d1f; font-weight: 500; }
+
+  .click-section { margin-top: 20px; }
+  .click-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .click-list { max-height: 200px; overflow-y: auto; background: #f9f9fb; border-radius: 10px; padding: 12px; }
+  .click-row { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid #f0f0f2; font-size: 12px; color: #555; }
+  .click-row:last-child { border-bottom: none; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .detail-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
+
+  .last-updated { font-size: 12px; color: #86868b; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="dashboard" id="app">
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div>Загрузка данных из Firebase...</div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_DB_URL = 'https://datagatetest-4f190-default-rtdb.firebaseio.com';
+
+let participants = [];
+let modalOpen = null;
+
+async function fetchData() {
+  try {
+    const res = await fetch(`${FIREBASE_DB_URL}/participants.json`);
+    const data = await res.json();
+    if (!data) return [];
+    return Object.entries(data).map(([key, val]) => ({ ...val, _key: key }));
+  } catch (err) {
+    console.error('Ошибка загрузки:', err);
+    return [];
+  }
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDuration(ms) {
+  if (!ms) return '0 сек';
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `${sec} сек`;
+  return `${Math.floor(sec/60)} мин ${sec%60} сек`;
+}
+
+function getStats(data) {
+  const total = data.length;
+  const withClicks = data.filter(p => p.totalClicks > 0).length;
+  const withSurvey = data.filter(p => p.surveyAnswers).length;
+  const avgClicks = total > 0 ? Math.round(data.reduce((s, p) => s + (p.totalClicks || 0), 0) / total) : 0;
+  const avgDuration = total > 0 ? Math.round(data.reduce((s, p) => s + (p.sessionDuration || 0), 0) / total / 1000) : 0;
+
+  // Grade distribution
+  const grades = {};
+  data.forEach(p => { grades[p.grade] = (grades[p.grade] || 0) + 1; });
+
+  return { total, withClicks, withSurvey, avgClicks, avgDuration, grades };
+}
+
+function getSurveyStats(data) {
+  const withSurvey = data.filter(p => p.surveyAnswers);
+  if (withSurvey.length === 0) return null;
+
+  // Ease of use average
+  const easeValues = withSurvey
+    .map(p => parseInt(p.surveyAnswers?.ease_of_use))
+    .filter(v => !isNaN(v));
+  const avgEase = easeValues.length > 0
+    ? (easeValues.reduce((a,b) => a+b, 0) / easeValues.length).toFixed(1)
+    : '—';
+
+  // AI attitude distribution
+  const aiAttitudes = {};
+  withSurvey.forEach(p => {
+    const a = p.surveyAnswers?.ai_attitude;
+    if (a) aiAttitudes[a] = (aiAttitudes[a] || 0) + 1;
+  });
+
+  return { avgEase, aiAttitudes, total: withSurvey.length };
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const stats = getStats(participants);
+  const surveyStats = getSurveyStats(participants);
+
+  let html = `
+    <div class="header">
+      <div>
+        <h1>📊 Дашборд исследования</h1>
+        <div class="last-updated">Обновлено: ${new Date().toLocaleString('ru-RU')}</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="refreshData()">🔄 Обновить</button>
+        <button class="btn btn-primary" onclick="exportCSV()">📥 Скачать CSV</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Участников</div>
+        <div class="stat-value brand">${stats.total}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Прошли тест</div>
+        <div class="stat-value green">${stats.withClicks}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Прошли опрос</div>
+        <div class="stat-value">${stats.withSurvey}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ср. кликов</div>
+        <div class="stat-value orange">${stats.avgClicks}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ср. время сессии</div>
+        <div class="stat-value">${stats.avgDuration} сек</div>
+      </div>
+    </div>
+  `;
+
+  // Survey summary card
+  if (surveyStats) {
+    html += `
+      <div class="table-card">
+        <h2>📋 Сводка по опроснику (${surveyStats.total} ответов)</h2>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">Средняя оценка лёгкости (1-7)</div>
+            <div class="detail-value" style="font-size: 28px; color: #835de1;">${surveyStats.avgEase}/7</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Отношение к ИИ-генерации</div>
+            ${Object.entries(surveyStats.aiAttitudes).map(([k,v]) => `<div style="font-size:13px;margin-top:4px;"><strong>${v}</strong> — ${k}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Grades distribution
+  if (Object.keys(stats.grades).length > 0) {
+    html += `
+      <div class="table-card">
+        <h2>👥 Распределение по грейдам</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          ${Object.entries(stats.grades).sort((a,b) => b[1]-a[1]).map(([grade, count]) => `
+            <div style="background:#f9f9fb;border-radius:10px;padding:14px 20px;text-align:center;">
+              <div style="font-size:24px;font-weight:700;color:#835de1;">${count}</div>
+              <div style="font-size:13px;color:#86868b;margin-top:4px;">${grade}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Participants table
+  if (participants.length === 0) {
+    html += `
+      <div class="table-card">
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <div>Пока нет участников</div>
+        </div>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="table-card">
+        <h2>👤 Участники</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Имя</th>
+              <th>Грейд</th>
+              <th>Должность</th>
+              <th>Кликов</th>
+              <th>Сессия</th>
+              <th>Опрос</th>
+              <th>Дата</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${participants.map((p, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td><strong>${p.firstName || ''} ${p.lastName || ''}</strong></td>
+                <td><span class="badge badge-purple">${p.grade || '—'}</span></td>
+                <td>${p.position || '—'}</td>
+                <td><span class="click-count">${p.totalClicks || 0}</span></td>
+                <td class="click-info">${formatDuration(p.sessionDuration)}</td>
+                <td>${p.surveyAnswers ? '<span class="badge badge-green">✓ Пройден</span>' : '<span class="badge badge-gray">Нет</span>'}</td>
+                <td style="font-size:13px;color:#86868b;">${formatDate(p.registeredAt)}</td>
+                <td><button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="showDetail(${i})">Подробнее</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  app.innerHTML = html;
+}
+
+function showDetail(index) {
+  const p = participants[index];
+  if (!p) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  let surveyHtml = '';
+  if (p.surveyAnswers) {
+    const questions = {
+      ease_of_use: 'Насколько легко было создать документ?',
+      ai_attitude: 'Отношение к ИИ-генерации',
+      llm_usage: 'Использует LLM в работе?',
+      improvements: 'Что улучшить?',
+      unclear: 'Что было непонятно?',
+    };
+    surveyHtml = `
+      <div class="survey-section">
+        <h3>📋 Ответы опросника</h3>
+        ${Object.entries(questions).map(([id, q]) => {
+          const a = p.surveyAnswers[id];
+          if (!a) return '';
+          return `<div class="survey-item"><div class="survey-q">${q}</div><div class="survey-a">${a}</div></div>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  let clicksHtml = '';
+  if (p.clickMap && p.clickMap.length > 0) {
+    clicksHtml = `
+      <div class="click-section">
+        <h3>🖱 Карта кликов (${p.clickMap.length})</h3>
+        <div class="click-list">
+          ${p.clickMap.slice(0, 50).map((c, i) => `
+            <div class="click-row">
+              <span style="width:30px;font-weight:600;">#${i+1}</span>
+              <span style="width:70px;">${(c.ts/1000).toFixed(1)}s</span>
+              <span style="width:90px;">(${c.x}, ${c.y})</span>
+              <span style="flex:1;color:#1d1d1f;">${c.element || ''}</span>
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(c.text || '').slice(0,40)}</span>
+            </div>
+          `).join('')}
+          ${p.clickMap.length > 50 ? `<div style="text-align:center;padding:8px;color:#86868b;font-size:12px;">...и ещё ${p.clickMap.length - 50} кликов</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  overlay.innerHTML = `
+    <div class="modal">
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      <h2>${p.firstName || ''} ${p.lastName || ''}</h2>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <div class="detail-label">Грейд</div>
+          <div class="detail-value">${p.grade || '—'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Должность</div>
+          <div class="detail-value">${p.position || '—'}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Всего кликов</div>
+          <div class="detail-value" style="color:#835de1;">${p.totalClicks || 0}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Длительность сессии</div>
+          <div class="detail-value">${formatDuration(p.sessionDuration)}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Дата регистрации</div>
+          <div class="detail-value">${formatDate(p.registeredAt)}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Дата сохранения</div>
+          <div class="detail-value">${formatDate(p.savedAt)}</div>
+        </div>
+      </div>
+      ${p.formData ? `
+        <div class="detail-grid" style="margin-top:12px;">
+          <div class="detail-item">
+            <div class="detail-label">Владелец</div>
+            <div class="detail-value">${p.formData.owner || '—'}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Хранилище</div>
+            <div class="detail-value">${p.formData.database || ''} / ${p.formData.schema || ''} / ${p.formData.table || ''}</div>
+          </div>
+        </div>
+      ` : ''}
+      ${surveyHtml}
+      ${clicksHtml}
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+function exportCSV() {
+  if (participants.length === 0) return alert('Нет данных для экспорта');
+
+  const surveyHeaders = ['ease_of_use', 'ai_attitude', 'llm_usage', 'improvements', 'unclear'];
+  const headers = ['№', 'Имя', 'Фамилия', 'Грейд', 'Должность', 'Дата', 'Кликов', 'Сессия (сек)', ...surveyHeaders.map(h => 'Опрос: ' + h)];
+
+  const rows = participants.map((p, i) => {
+    const sv = surveyHeaders.map(h => `"${String(p.surveyAnswers?.[h] || '').replace(/"/g, '""')}"`);
+    return [
+      i + 1,
+      `"${(p.firstName || '').replace(/"/g, '""')}"`,
+      `"${(p.lastName || '').replace(/"/g, '""')}"`,
+      `"${(p.grade || '').replace(/"/g, '""')}"`,
+      `"${(p.position || '').replace(/"/g, '""')}"`,
+      `"${(p.registeredAt || '').replace(/"/g, '""')}"`,
+      p.totalClicks || 0,
+      p.sessionDuration ? Math.round(p.sessionDuration / 1000) : 0,
+      ...sv,
+    ].join(',');
+  });
+
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `research_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function refreshData() {
+  document.getElementById('app').innerHTML = '<div class="loading"><div class="spinner"></div><div>Загрузка...</div></div>';
+  participants = await fetchData();
+  render();
+}
+
+// Init
+(async () => {
+  participants = await fetchData();
+  render();
+})();
+</script>
+</body>
+</html>
