@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import html2canvas from 'html2canvas'
 import './index.css'
 
 /* ===== SVG Иконки (inline) ===== */
@@ -139,7 +140,7 @@ const bottomItems = [
   { icon: `${base}assets/icon-help-circle.svg`, label: 'Нужна помощь' },
 ]
 
-function Sidebar() {
+function Sidebar({ onIdeaClick, currentPage, userName, onLogoClick }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-top-bar">
@@ -149,8 +150,11 @@ function Sidebar() {
         </span>
       </div>
 
-      <div className="sidebar-logo">
-        <img src={`${base}assets/logo.svg`} alt="DataGate" />
+      <div className="sidebar-logo" onClick={onLogoClick} style={{ cursor: onLogoClick ? 'pointer' : 'default' }} title="На главную">
+        <svg className="logo-svg" preserveAspectRatio="xMidYMid meet" overflow="visible" width="143.276" height="31" viewBox="0 0 143.276 31" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path className="logo-dot" d="M136.099 20.598C136.099 18.5696 137.659 17.0093 139.688 17.0093C141.716 17.0093 143.276 18.5696 143.276 20.598C143.276 22.6264 141.716 24.1868 139.688 24.1868C137.659 24.1868 136.099 22.6264 136.099 20.598Z" fill="#835DE1"/>
+          <path d="M76.4629 6.88086C80.0288 6.88086 81.5977 9.5557 81.6074 9.57227H81.7432V7.22168H85.5586V22.3477C85.5584 27.287 81.8456 30.9999 76.9062 31C72.1876 31 69.8027 27.6174 69.7861 27.5938L72.3076 25.1406C72.3244 25.1627 74.025 27.3887 76.9062 27.3887C79.8357 27.3886 81.743 25.4815 81.7432 22.3477V20.8486H81.6074C81.5953 20.869 80.026 23.5059 76.4629 23.5059C72.6817 23.5056 69.1387 19.9625 69.1387 15.1934C69.1387 10.4243 72.6817 6.88109 76.4629 6.88086ZM16.9648 23.8467H13.1836V21.4619H13.0479C13.0419 21.472 11.4389 24.1865 7.5625 24.1865C3.57688 24.1864 4.07708e-05 20.6099 0 15.5342C0 10.4584 3.57686 6.881 7.5625 6.88086C11.446 6.88086 13.0479 9.60645 13.0479 9.60645H13.1836V0H16.9648V23.8467ZM26.6904 6.88086C30.7781 6.88106 33.6396 9.8111 33.6396 13.4561V23.8457H29.8242V21.5977H29.6875C29.6814 21.6077 28.1137 24.1865 24.6797 24.1865C21.4438 24.1863 19.2297 21.9727 19.2295 19.418C19.2295 16.6928 21.2393 14.683 24.1348 14.1719L29.8242 13.1494V13.1152C29.8241 11.8548 28.4614 10.458 26.5537 10.458C24.0669 10.458 22.4316 12.5703 22.4316 12.5703L20.0811 10.2197C20.0811 10.2197 22.4322 6.88086 26.6904 6.88086ZM41.5586 7.49414H45.3057V11.1055H41.5586V18.0205C41.5586 19.7236 42.4102 20.576 43.8066 20.5762C44.8286 20.5762 45.8174 20.0645 45.8174 20.0645V23.6758C45.8174 23.6758 44.6585 24.1865 42.9893 24.1865C39.7531 24.1864 37.7432 22.1769 37.7432 18.4639V11.1055H34.6777V7.49414H36.4492C37.5731 7.49402 38.0839 6.98342 38.084 5.62109V2.18066H41.5586V7.49414ZM54.7061 6.88086C58.7939 6.88095 61.6553 9.81104 61.6553 13.4561V23.8467H57.8398V21.5977H57.7041C57.6909 21.6194 56.1221 24.1864 52.6963 24.1865C49.4603 24.1864 47.2453 21.9727 47.2451 19.418C47.2451 16.6928 49.2559 14.6829 52.1514 14.1719L57.8398 13.1494V13.1152C57.8397 11.8548 56.477 10.458 54.5693 10.458C52.0828 10.4583 50.4473 12.5703 50.4473 12.5703L48.0967 10.2197C48.0967 10.2197 50.448 6.881 54.7061 6.88086ZM95.1562 6.88086C99.2442 6.88086 102.105 9.81098 102.105 13.4561V23.8457H98.29V21.5977H98.1543C98.1543 21.5977 96.5871 24.1865 93.1465 24.1865C89.9104 24.1865 87.6965 21.9728 87.6963 19.418C87.6963 16.6927 89.7059 14.6829 92.6016 14.1719L98.29 13.1494V13.1152C98.29 11.8549 96.9279 10.4582 95.0205 10.458C92.5461 10.458 90.9146 12.5495 90.8984 12.5703L88.5479 10.2197C88.5664 10.1935 90.9149 6.88091 95.1562 6.88086ZM123.614 6.88086C128.349 6.88086 131.756 10.5603 131.756 15.1592C131.756 16.1812 131.586 16.999 131.586 16.999H119.084C119.493 18.9407 121.23 20.6777 123.955 20.6777C126.828 20.6777 128.561 18.5989 128.588 18.5664L130.769 21.2568C130.769 21.2568 128.554 24.1864 123.785 24.1865C118.88 24.1865 114.996 20.3034 114.996 15.5342C114.996 10.765 118.879 6.88096 123.614 6.88086ZM109.728 7.08887H113.475V10.6992H109.728V17.6152C109.728 19.3184 110.579 20.1699 111.976 20.1699C112.989 20.1699 113.969 19.6678 113.985 19.6592V23.2695C113.985 23.2695 112.827 23.7812 111.158 23.7812C107.922 23.7812 105.912 21.7708 105.912 18.0576V10.6992H102.846V7.08887H104.617C105.741 7.08887 106.253 6.57749 106.253 5.21484V1.77441H109.728V7.08887ZM25.7021 16.8623C23.7605 17.2029 23.0109 17.9186 23.0107 18.9404C23.0107 19.9964 24.0328 21.0185 25.6338 21.0186C27.9162 21.0186 29.8242 19.111 29.8242 16.6582V16.1475L25.7021 16.8623ZM53.7178 16.8623C51.7764 17.203 51.0265 17.9186 51.0264 18.9404C51.0264 19.9963 52.0487 21.0183 53.6494 21.0186C55.9318 21.0186 57.8398 19.1109 57.8398 16.6582V16.1475L53.7178 16.8623ZM94.168 16.8623C92.2266 17.203 91.4777 17.9186 91.4775 18.9404C91.4775 19.9965 92.4995 21.0186 94.1006 21.0186C96.3829 21.0184 98.29 19.1109 98.29 16.6582V16.1475L94.168 16.8623ZM8.48242 10.6289C5.89344 10.629 3.81543 12.7408 3.81543 15.5342C3.81547 18.3616 5.89347 20.4394 8.48242 20.4395C11.0714 20.4395 13.1836 18.3616 13.1836 15.5342C13.1836 12.7408 11.0714 10.6289 8.48242 10.6289ZM77.417 10.5264C74.8621 10.5264 72.9541 12.4341 72.9541 15.1934C72.9541 17.9527 74.8621 19.8945 77.417 19.8945C79.8357 19.8945 81.7432 17.9527 81.7432 15.1934C81.7432 12.434 79.8357 10.5264 77.417 10.5264ZM123.479 10.458C121.06 10.458 119.663 11.8893 119.084 13.8311H127.668C127.157 11.8894 125.727 10.4581 123.479 10.458Z" fill="#191919"/>
+        </svg>
       </div>
 
       <nav className="sidebar-nav">
@@ -179,7 +183,11 @@ function Sidebar() {
         <div className="sidebar-bottom">
           <div className="sidebar-bottom-card">
             {bottomItems.map((item) => (
-              <button key={item.label} className="sidebar-item">
+              <button
+                key={item.label}
+                className={`sidebar-item ${item.label === 'Есть идея' && currentPage === 'admin' ? 'active' : ''}`}
+                onClick={item.label === 'Есть идея' && onIdeaClick ? onIdeaClick : undefined}
+              >
                 <img src={item.icon} alt="" className="sidebar-item-icon" />
                 <span>{item.label}</span>
               </button>
@@ -190,7 +198,7 @@ function Sidebar() {
             <div className="sidebar-avatar">
               <img src={`${base}assets/avatar-cat.jpg`} alt="Avatar" />
             </div>
-            <span className="sidebar-user-name">Никита Сокол</span>
+            <span className="sidebar-user-name">{userName || 'Никита Сокол'}</span>
           </button>
         </div>
       </nav>
@@ -290,16 +298,6 @@ function TextEditor({ value, onChange, placeholder, isGenerating, onGenerate, di
           <button className="toolbar-btn" title="Жирный"><b>B</b></button>
           <button className="toolbar-btn" title="Список">≡</button>
           <button className="toolbar-btn" title="Ссылка">🔗</button>
-          <div className="toolbar-divider" />
-          <button
-            className={`toolbar-ai-btn ${isGenerating ? 'generating' : ''} ${disableGenerate ? 'disabled' : ''}`}
-            onClick={onGenerate}
-            disabled={isGenerating || disableGenerate}
-            title="Сгенерировать с ИИ"
-          >
-            <SparkleIcon />
-            <span>{isGenerating ? 'Генерация...' : 'Сгенерировать ИИ'}</span>
-          </button>
         </div>
         <span className="toolbar-counter">{value.length} / {maxLen}</span>
       </div>
@@ -597,8 +595,651 @@ function FieldsTable({ fields, setFields, missingFields, setMissingFields, onGen
   )
 }
 
+/* ===== Registration Page ===== */
+function RegistrationPage({ onComplete, onSkipToMain }) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [grade, setGrade] = useState('')
+  const [position, setPosition] = useState('')
+
+  const gradeOptions = ['Junior', 'Middle', 'Senior', 'Lead', 'Principal', 'Head']
+  const positionOptions = [
+    'Data Engineer',
+    'Data Analyst',
+    'Data Scientist',
+    'Backend Developer',
+    'Frontend Developer',
+    'DevOps Engineer',
+    'QA Engineer',
+    'Product Manager',
+    'Project Manager',
+    'Designer',
+    'Team Lead',
+    'Tech Lead',
+    'Аналитик',
+    'Разработчик',
+    'Тестировщик',
+  ]
+
+  const canSubmit = firstName.trim() && lastName.trim() && grade && position
+
+  const handleSubmit = () => {
+    if (!canSubmit) return
+    const participant = {
+      id: Date.now(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      grade,
+      position,
+      registeredAt: new Date().toISOString(),
+    }
+    // Сохраняем в localStorage
+    const existing = JSON.parse(localStorage.getItem('research_participants') || '[]')
+    existing.push(participant)
+    localStorage.setItem('research_participants', JSON.stringify(existing))
+    // Сохраняем текущего пользователя
+    localStorage.setItem('research_current_user', JSON.stringify(participant))
+    onComplete(participant)
+  }
+
+  return (
+    <div className="registration-page">
+      <div className="registration-card">
+        <div className="registration-logo">
+          <img src={`${base}assets/logo.svg`} alt="DataGate" />
+        </div>
+        <h1 className="registration-title">Добро пожаловать</h1>
+        <p className="registration-subtitle">
+          Перед началом исследования заполните, пожалуйста, информацию о себе
+        </p>
+
+        <div className="registration-form">
+          <div className="registration-field">
+            <label className="registration-label">Имя</label>
+            <input
+              className="registration-input"
+              type="text"
+              placeholder="Введите имя"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+          </div>
+
+          <div className="registration-field">
+            <label className="registration-label">Фамилия</label>
+            <input
+              className="registration-input"
+              type="text"
+              placeholder="Введите фамилию"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
+          </div>
+
+          <Dropdown
+            label="Грейд"
+            placeholder="Выберите грейд"
+            options={gradeOptions}
+            value={grade}
+            onChange={setGrade}
+          />
+
+          <Dropdown
+            label="Должность"
+            placeholder="Выберите должность"
+            options={positionOptions}
+            value={position}
+            onChange={setPosition}
+          />
+        </div>
+
+        <button
+          className={`registration-submit ${canSubmit ? '' : 'disabled'}`}
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+        >
+          Начать исследование
+        </button>
+      </div>
+
+      {/* Секретная кнопка для быстрого входа */}
+      {onSkipToMain && (
+        <button
+          className="admin-ticket-btn"
+          onClick={onSkipToMain}
+          title="Перейти к созданию документа"
+        >
+          🎟️
+        </button>
+      )}
+    </div>
+  )
+}
+
+/* ===== Click Map Visualization ===== */
+function ClickMapView({ clicks, vpW, vpH, screenshot }) {
+  const containerRef = useRef(null)
+  const [imgSize, setImgSize] = useState({ w: 0, h: 0 })
+
+  if (!clicks || clicks.length === 0) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center', color: '#949494', fontSize: 14, background: 'var(--color-bg-field)', borderRadius: 12 }}>
+        Нет данных о кликах. Пользователь ещё не сохранил документ.
+      </div>
+    )
+  }
+
+  // Координаты кликов записаны относительно main-content (vpW × vpH).
+  // Скриншот сделан с scale=0.5, поэтому его натуральные пиксели = vpW*0.5 × vpH*0.5.
+  // Показываем скриншот в 100% его натурального размера (ограничено max-width контейнера).
+  // Точки позиционируем в процентах от vpW/vpH.
+
+  const handleImgLoad = (e) => {
+    setImgSize({ w: e.target.naturalWidth, h: e.target.naturalHeight })
+  }
+
+  return (
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{
+        position: 'relative',
+        display: 'inline-block',
+        borderRadius: 12,
+        border: '1px solid var(--color-border)',
+        overflow: 'hidden',
+        maxWidth: '100%',
+      }}>
+        {screenshot ? (
+          <img
+            src={screenshot}
+            alt="Скриншот интерфейса"
+            onLoad={handleImgLoad}
+            style={{ display: 'block', maxWidth: '100%', height: 'auto' }}
+          />
+        ) : (
+          <div style={{
+            width: 680,
+            height: Math.round(680 * (vpH || 900) / (vpW || 1440)),
+            background: '#f4f4f5',
+          }} />
+        )}
+        {/* Точки кликов поверх скриншота в процентах */}
+        {clicks.map((click, i) => {
+          const leftPct = ((click.x / (vpW || 1)) * 100)
+          const topPct = ((click.y / (vpH || 1)) * 100)
+          const t = clicks.length > 1 ? i / (clicks.length - 1) : 0
+          const r = Math.round(131 + (249 - 131) * t)
+          const g = Math.round(93 + (142 - 93) * t * 0.5)
+          const b = Math.round(225 + (136 - 225) * t)
+          return (
+            <div
+              key={i}
+              title={`#${i+1}: ${click.element} — ${click.text}`}
+              style={{
+                position: 'absolute',
+                left: `${leftPct}%`,
+                top: `${topPct}%`,
+                transform: 'translate(-50%, -50%)',
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                background: `rgb(${r},${g},${b})`,
+                border: '2px solid rgba(255,255,255,0.9)',
+                boxShadow: `0 0 6px rgba(${r},${g},${b},0.5)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 8,
+                fontWeight: 700,
+                color: '#fff',
+                cursor: 'default',
+                zIndex: 2,
+                pointerEvents: 'auto',
+              }}
+            >
+              {i < 99 ? i + 1 : ''}
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: 'var(--color-secondary)' }}>
+        <span>🖱 Кликов: <b style={{ color: 'var(--color-primary)' }}>{clicks.length}</b></span>
+        <span>⏱ Сессия: <b style={{ color: 'var(--color-primary)' }}>{clicks.length > 0 ? Math.round(clicks[clicks.length - 1].ts / 1000) : 0} сек</b></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgb(131,93,225)', display: 'inline-block' }} /> Начало
+          <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgb(249,142,136)', display: 'inline-block', marginLeft: 8 }} /> Конец
+        </span>
+      </div>
+      {/* Список последних кликов */}
+      <details style={{ fontSize: 13 }}>
+        <summary style={{ cursor: 'pointer', color: 'var(--color-brand)', fontWeight: 500, padding: '4px 0' }}>
+          Показать список кликов ({clicks.length})
+        </summary>
+        <div style={{ maxHeight: 200, overflowY: 'auto', marginTop: 8, background: 'var(--color-bg-field)', borderRadius: 8, padding: '8px 12px' }}>
+          {clicks.map((c, i) => (
+            <div key={i} style={{ padding: '3px 0', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: 12, fontSize: 12, color: 'var(--color-secondary)' }}>
+              <span style={{ width: 24, fontWeight: 600, color: 'var(--color-primary)' }}>#{i+1}</span>
+              <span style={{ width: 80 }}>{(c.ts / 1000).toFixed(1)}s</span>
+              <span style={{ width: 100 }}>({c.x}, {c.y})</span>
+              <span style={{ flex: 1, color: 'var(--color-primary)' }}>{c.element}</span>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.text}</span>
+            </div>
+          ))}
+        </div>
+      </details>
+    </div>
+  )
+}
+
+/* ===== Survey Questions (нужно ДО AdminPage, т.к. используется в нём) ===== */
+const surveyQuestions = [
+  {
+    id: 'ease_of_use',
+    text: 'Насколько легко было создать документ?',
+    type: 'scale',
+    scaleMin: 1,
+    scaleMax: 7,
+    scaleLabels: ['Очень сложно', 'Очень легко'],
+  },
+  {
+    id: 'ai_attitude',
+    text: 'Как вы относитесь к генерации описания с помощью ИИ?',
+    type: 'choice',
+    options: [
+      'Положительно — это ускоряет работу',
+      'Нейтрально — зависит от качества',
+      'Скептически — предпочитаю писать сам(а)',
+      'Отрицательно — не доверяю ИИ',
+    ],
+  },
+  {
+    id: 'llm_usage',
+    text: 'Используете генерацию контента от LLM в настоящей работе?',
+    type: 'choice',
+    options: [
+      'Да, регулярно',
+      'Иногда, для отдельных задач',
+      'Редко, пробовал(а) пару раз',
+      'Нет, не использую',
+    ],
+  },
+  {
+    id: 'improvements',
+    text: 'Что бы вы улучшили в кейсе создания документа?',
+    type: 'text',
+  },
+  {
+    id: 'unclear',
+    text: 'Что было непонятно при создании документа?',
+    type: 'text',
+  },
+]
+
+/* ===== Admin Page ===== */
+function AdminPage({ onBack }) {
+  const [participants, setParticipants] = useState([])
+  const [expandedId, setExpandedId] = useState(null)
+
+  useEffect(() => {
+    const data = JSON.parse(localStorage.getItem('research_participants') || '[]')
+    setParticipants(data)
+  }, [])
+
+  const clearAll = () => {
+    if (confirm('Удалить все записи участников?')) {
+      localStorage.removeItem('research_participants')
+      localStorage.removeItem('research_sessions')
+      setParticipants([])
+    }
+  }
+
+  const formatDate = (iso) => {
+    const d = new Date(iso)
+    return d.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  const toggleExpand = (id) => {
+    setExpandedId(prev => prev === id ? null : id)
+  }
+
+  return (
+    <div className="layout">
+      <Sidebar onIdeaClick={onBack} currentPage="admin" />
+      <div className="main-area">
+        <main className="main-content">
+          <div className="navbar">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button className="admin-back-btn" onClick={onBack} title="Назад">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M12 5l-5 5 5 5" stroke="#191919" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <h1 className="navbar-title">Участники исследования</h1>
+            </div>
+          </div>
+
+          <div className="form-container">
+            <div className="admin-header">
+              <span className="admin-count">Всего: {participants.length}</span>
+              {participants.length > 0 && (
+                <button className="admin-clear-btn" onClick={clearAll}>
+                  Очистить всё
+                </button>
+              )}
+            </div>
+
+            {participants.length === 0 ? (
+              <div className="admin-empty">
+                <p>Пока нет зарегистрированных участников</p>
+              </div>
+            ) : (
+              <div className="admin-table">
+                <div className="admin-table-header">
+                  <span className="admin-col admin-col-num">№</span>
+                  <span className="admin-col admin-col-name">Имя Фамилия</span>
+                  <span className="admin-col admin-col-grade">Грейд</span>
+                  <span className="admin-col admin-col-position">Должность</span>
+                  <span className="admin-col admin-col-date">Дата</span>
+                </div>
+                {participants.map((p, i) => (
+                  <div key={p.id}>
+                    <div
+                      className="admin-table-row"
+                      style={{ cursor: 'pointer', transition: 'background 0.15s' }}
+                      onClick={() => toggleExpand(p.id)}
+                      title="Нажмите, чтобы увидеть карту кликов"
+                    >
+                      <span className="admin-col admin-col-num">{i + 1}</span>
+                      <span className="admin-col admin-col-name">
+                        {p.firstName} {p.lastName}
+                        {p.clickMap && p.clickMap.length > 0 && (
+                          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--color-brand)', fontWeight: 500 }}>
+                            🖱 {p.totalClicks || p.clickMap.length}
+                          </span>
+                        )}
+                      </span>
+                      <span className="admin-col admin-col-grade">
+                        <span className="admin-grade-badge">{p.grade}</span>
+                      </span>
+                      <span className="admin-col admin-col-position">{p.position}</span>
+                      <span className="admin-col admin-col-date">
+                        {formatDate(p.registeredAt)}
+                        <span style={{ marginLeft: 8, fontSize: 14 }}>
+                          {expandedId === p.id ? '▲' : '▼'}
+                        </span>
+                      </span>
+                    </div>
+                    {expandedId === p.id && (
+                      <div style={{
+                        background: 'var(--color-white)',
+                        padding: '20px 16px',
+                        borderRadius: '0 0 12px 12px',
+                        marginTop: -1,
+                        borderTop: '2px solid var(--color-brand)',
+                      }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: 'var(--color-primary)' }}>
+                          Карта кликов — {p.firstName} {p.lastName}
+                        </div>
+                        <ClickMapView
+                          clicks={p.clickMap}
+                          vpW={p.clickMap?.[0]?.vpW}
+                          vpH={p.clickMap?.[0]?.vpH}
+                          screenshot={p.screenshot}
+                        />
+
+                        {/* Ответы опросника */}
+                        {p.surveyAnswers && (
+                          <div className="admin-survey-answers">
+                            <div className="admin-survey-title">
+                              📋 Ответы опросника
+                              {p.surveyCompletedAt && (
+                                <span className="admin-survey-date">{formatDate(p.surveyCompletedAt)}</span>
+                              )}
+                            </div>
+                            <div className="admin-survey-grid">
+                              {surveyQuestions.map((q) => {
+                                const answer = p.surveyAnswers[q.id]
+                                if (!answer) return null
+                                return (
+                                  <div key={q.id} className="admin-survey-item">
+                                    <div className="admin-survey-q">{q.text}</div>
+                                    <div className={`admin-survey-a ${q.type === 'scale' ? 'scale' : ''}`}>
+                                      {q.type === 'scale' ? (
+                                        <span className="admin-survey-scale-value">{answer}<span className="admin-survey-scale-max">/{q.scaleMax}</span></span>
+                                      ) : (
+                                        answer
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {!p.surveyAnswers && (
+                          <div className="admin-survey-empty">Опросник не пройден</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+/* ===== Survey Modal (Опросник после сохранения) ===== */
+function SurveyModal({ onComplete }) {
+  const [step, setStep] = useState(0)
+  const [answers, setAnswers] = useState({})
+  const question = surveyQuestions[step]
+  const totalSteps = surveyQuestions.length
+  const isLast = step === totalSteps - 1
+
+  const currentAnswer = answers[question.id] || ''
+  const canProceed = currentAnswer.trim().length > 0
+
+  const handleNext = () => {
+    if (!canProceed) return
+    if (isLast) {
+      onComplete(answers)
+    } else {
+      setStep(step + 1)
+    }
+  }
+
+  const handleBack = () => {
+    if (step > 0) setStep(step - 1)
+  }
+
+  const setAnswer = (val) => {
+    setAnswers(prev => ({ ...prev, [question.id]: val }))
+  }
+
+  return (
+    <div className="survey-overlay">
+      <div className="survey-modal">
+        <div className="survey-header">
+          <div className="survey-step-indicator">
+            {surveyQuestions.map((_, i) => (
+              <div key={i} className={`survey-step-dot ${i === step ? 'active' : i < step ? 'done' : ''}`} />
+            ))}
+          </div>
+          <div className="survey-step-label">Шаг {step + 1} из {totalSteps}</div>
+        </div>
+
+        <div className="survey-body">
+          <h2 className="survey-question">{question.text}</h2>
+
+          {question.type === 'choice' && (
+            <div className="survey-choices">
+              {question.options.map((opt) => (
+                <button
+                  key={opt}
+                  className={`survey-choice ${currentAnswer === opt ? 'selected' : ''}`}
+                  onClick={() => setAnswer(opt)}
+                >
+                  <span className="survey-radio">{currentAnswer === opt ? '●' : '○'}</span>
+                  <span>{opt}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {question.type === 'scale' && (
+            <div className="survey-scale">
+              <div className="survey-scale-labels">
+                <span>{question.scaleLabels?.[0]}</span>
+                <span>{question.scaleLabels?.[1]}</span>
+              </div>
+              <div className="survey-scale-buttons">
+                {Array.from({ length: question.scaleMax - question.scaleMin + 1 }, (_, i) => {
+                  const val = String(question.scaleMin + i)
+                  return (
+                    <button
+                      key={val}
+                      className={`survey-scale-btn ${currentAnswer === val ? 'selected' : ''}`}
+                      onClick={() => setAnswer(val)}
+                    >
+                      {val}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {question.type === 'text' && (
+            <textarea
+              className="survey-textarea"
+              value={currentAnswer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Напишите ваш ответ..."
+              rows={4}
+            />
+          )}
+        </div>
+
+        <div className="survey-footer">
+          {step > 0 && (
+            <button className="survey-btn survey-btn-back" onClick={handleBack}>
+              Назад
+            </button>
+          )}
+          <button
+            className={`survey-btn survey-btn-next ${!canProceed ? 'disabled' : ''}`}
+            onClick={handleNext}
+            disabled={!canProceed}
+          >
+            {isLast ? 'Завершить' : 'Далее'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ===== Click Tracker ===== */
+function useClickTracker() {
+  const clicksRef = useRef([])
+  const startTimeRef = useRef(Date.now())
+
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+
+    const handleClick = (e) => {
+      const target = e.target.closest('button, a, input, textarea, select, [role="button"], .dropdown-trigger, .tag-chip, .storage-chip, .sidebar-item, .switch-toggle, .admin-ticket-btn')
+      // Координаты относительно .main-area для точного наложения на скриншот
+      const scrollContainer = document.querySelector('.main-area')
+      const mainContent = document.querySelector('.main-content')
+      let relX = e.clientX
+      let relY = e.clientY
+      let contentW = window.innerWidth
+      let contentH = window.innerHeight
+      if (scrollContainer) {
+        const scrollRect = scrollContainer.getBoundingClientRect()
+        relX = Math.max(0, e.clientX - scrollRect.left)
+        relY = Math.max(0, e.clientY - scrollRect.top + scrollContainer.scrollTop)
+        contentW = scrollContainer.clientWidth
+        contentH = scrollContainer.scrollHeight
+      }
+      const click = {
+        x: relX,
+        y: relY,
+        vpW: contentW,
+        vpH: contentH,
+        ts: Date.now() - startTimeRef.current,
+        tag: e.target.tagName.toLowerCase(),
+        element: target ? (target.className?.split?.(' ')?.[0] || target.tagName.toLowerCase()) : e.target.tagName.toLowerCase(),
+        text: (target?.textContent || e.target.textContent || '').slice(0, 50).trim(),
+      }
+      clicksRef.current.push(click)
+    }
+
+    document.addEventListener('pointerdown', handleClick, true)
+    return () => document.removeEventListener('pointerdown', handleClick, true)
+  }, [])
+
+  const getClicks = () => [...clicksRef.current]
+  const resetClicks = () => { clicksRef.current = []; startTimeRef.current = Date.now() }
+
+  return { getClicks, resetClicks }
+}
+
 /* ===== Main App ===== */
 export default function App() {
+  const [page, setPage] = useState(() => {
+    const user = localStorage.getItem('research_current_user')
+    return user ? 'main' : 'registration'
+  })
+  const [currentUser, setCurrentUser] = useState(() => {
+    const user = localStorage.getItem('research_current_user')
+    return user ? JSON.parse(user) : null
+  })
+  const { getClicks, resetClicks } = useClickTracker()
+
+  const handleRegistrationComplete = (participant) => {
+    setCurrentUser(participant)
+    setPage('main')
+  }
+
+  const handleGoToAdmin = () => {
+    setPage('admin')
+  }
+
+  const handleBackToMain = () => {
+    // Если пользователь не зарегистрирован, возвращаем на регистрацию
+    setPage(currentUser ? 'main' : 'registration')
+  }
+
+  if (page === 'registration') {
+    return <RegistrationPage onComplete={handleRegistrationComplete} onSkipToMain={() => setPage('main')} />
+  }
+
+  if (page === 'admin') {
+    return <AdminPage onBack={handleBackToMain} />
+  }
+
+  const handleLogoClick = () => {
+    localStorage.removeItem('research_current_user')
+    setCurrentUser(null)
+    setPage('registration')
+  }
+
+  return <MainPage currentUser={currentUser} onGoToAdmin={handleGoToAdmin} onLogoClick={handleLogoClick} getClicks={getClicks} resetClicks={resetClicks} />
+}
+
+/* ===== Main Page (extracted) ===== */
+function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClicks }) {
   const [owner, setOwner] = useState('')
   const [storageEnabled, setStorageEnabled] = useState(true)
   const [storageType, setStorageType] = useState('DWH')
@@ -615,6 +1256,9 @@ export default function App() {
     { name: 'created_at', type: 'timestamp without time zone', description: '', inTable: true },
   ])
   const [missingFields, setMissingFields] = useState([])
+  const [showSurvey, setShowSurvey] = useState(false)
+  const [savedClicksCount, setSavedClicksCount] = useState(0)
+  const [savedSessionDuration, setSavedSessionDuration] = useState(0)
 
   // Каскадный сброс
   const handleDatabaseChange = (val) => {
@@ -721,8 +1365,93 @@ export default function App() {
     }
   }
 
-  const handleSave = () => {
-    alert('Документ сохранён! (демо)')
+  const handleSave = async () => {
+    // Собираем карту кликов и прикладываем к данным участника
+    const clicks = getClicks ? getClicks() : []
+
+    // Делаем скриншот интерфейса
+    let screenshotBase64 = null
+    try {
+      const mainContentEl = document.querySelector('.main-content')
+      const scrollEl = document.querySelector('.main-area')
+      if (mainContentEl && scrollEl) {
+        // Прокручиваем наверх чтобы html2canvas захватил весь контент корректно
+        const savedScroll = scrollEl.scrollTop
+        scrollEl.scrollTop = 0
+        // Небольшая задержка чтобы браузер отрисовал
+        await new Promise(r => setTimeout(r, 100))
+        const canvas = await html2canvas(mainContentEl, {
+          scale: 1, // 1:1 чтобы пиксели скриншота совпадали с координатами кликов
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#f4f4f5',
+          height: mainContentEl.scrollHeight,
+          windowHeight: mainContentEl.scrollHeight,
+        })
+        scrollEl.scrollTop = savedScroll
+        screenshotBase64 = canvas.toDataURL('image/jpeg', 0.4)
+      }
+    } catch (err) {
+      console.warn('Не удалось сделать скриншот:', err)
+    }
+
+    const sessionData = {
+      user: currentUser,
+      savedAt: new Date().toISOString(),
+      clickMap: clicks,
+      totalClicks: clicks.length,
+      sessionDuration: clicks.length > 0 ? clicks[clicks.length - 1].ts : 0,
+      screenshot: screenshotBase64,
+      formData: {
+        owner,
+        storageEnabled,
+        storageType,
+        database,
+        schema,
+        table,
+        description: description.slice(0, 200) + (description.length > 200 ? '...' : ''),
+        tags,
+        fieldsCount: fields.length,
+        missingFieldsCount: missingFields.length,
+      },
+    }
+    // Сохраняем сессию в localStorage
+    const sessions = JSON.parse(localStorage.getItem('research_sessions') || '[]')
+    sessions.push(sessionData)
+    localStorage.setItem('research_sessions', JSON.stringify(sessions))
+
+    // Также обновляем данные участника с кликами и скриншотом
+    if (currentUser) {
+      const participants = JSON.parse(localStorage.getItem('research_participants') || '[]')
+      const idx = participants.findIndex(p => p.id === currentUser.id)
+      if (idx !== -1) {
+        participants[idx].clickMap = clicks
+        participants[idx].totalClicks = clicks.length
+        participants[idx].sessionDuration = clicks.length > 0 ? clicks[clicks.length - 1].ts : 0
+        participants[idx].screenshot = screenshotBase64
+        localStorage.setItem('research_participants', JSON.stringify(participants))
+      }
+    }
+
+    if (resetClicks) resetClicks()
+    setSavedClicksCount(clicks.length)
+    setSavedSessionDuration(clicks.length > 0 ? Math.round(clicks[clicks.length - 1].ts / 1000) : 0)
+    setShowSurvey(true)
+  }
+
+  const handleSurveyComplete = (answers) => {
+    // Сохраняем ответы опросника к участнику
+    if (currentUser) {
+      const participants = JSON.parse(localStorage.getItem('research_participants') || '[]')
+      const idx = participants.findIndex(p => p.id === currentUser.id)
+      if (idx !== -1) {
+        participants[idx].surveyAnswers = answers
+        participants[idx].surveyCompletedAt = new Date().toISOString()
+        localStorage.setItem('research_participants', JSON.stringify(participants))
+      }
+    }
+    setShowSurvey(false)
+    alert(`Спасибо за участие в исследовании!\nЗаписано кликов: ${savedClicksCount}\nДлительность сессии: ${savedSessionDuration} сек`)
   }
 
   const canGenerate = storageEnabled && database && schema && table
@@ -730,7 +1459,7 @@ export default function App() {
 
   return (
     <div className="layout">
-      <Sidebar />
+      <Sidebar onIdeaClick={onGoToAdmin} onLogoClick={onLogoClick} userName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : undefined} />
       <div className="main-area">
         <main className="main-content">
           <div className="navbar">
@@ -839,6 +1568,9 @@ export default function App() {
         {/* Правая панель LLM — плавно появляется после заполнения хранилища */}
         <LLMPanel onGenerate={generateAll} isGenerating={isGeneratingAll} generationDone={generationDone} visible={showLLMPanel} />
       </div>
+
+      {/* Опросник после сохранения */}
+      {showSurvey && <SurveyModal onComplete={handleSurveyComplete} />}
     </div>
   )
 }
