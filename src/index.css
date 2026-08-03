@@ -145,7 +145,18 @@ body {
 }
 
 /* Логотип */
-/* Logo dot flame animation — handled via SVG <animate> in React */
+/* Logo dot pulse animation */
+.logo-dot {
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+.logo-dot.pulsing {
+  animation: logo-pulse 1.2s ease-in-out infinite;
+}
+@keyframes logo-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.7; }
+}
 
 .sidebar-logo {
   padding: 12px 20px 8px 34px;
@@ -1678,6 +1689,136 @@ body {
 .survey-btn-next { background: var(--color-brand); color: #fff; }
 .survey-btn-next:hover:not(.disabled) { background: var(--color-brand-hover); }
 .survey-btn-next.disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== Thank You Modal (Figma) ===== */
+.thankyou-modal {
+  width: 480px;
+  max-width: 95vw;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-dropdown);
+  animation: modalAppear 0.3s ease;
+}
+
+@keyframes modalAppear {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.thankyou-image-section {
+  background: #d6cef3;
+  height: 230px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.thankyou-character {
+  height: 332px;
+  width: 292px;
+  object-fit: cover;
+  position: relative;
+  top: 17px;
+}
+
+.thankyou-content {
+  background: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 0;
+}
+
+.thankyou-title-row {
+  padding: 10px 20px;
+}
+
+.thankyou-title {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 30px;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.thankyou-text-row {
+  padding: 10px 20px;
+}
+
+.thankyou-text {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 22px;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.thankyou-mention {
+  font-weight: 500;
+  color: var(--color-brand);
+}
+
+.thankyou-mention.clickable {
+  cursor: pointer;
+  position: relative;
+  border-bottom: 1px dashed var(--color-brand);
+  transition: opacity 0.15s;
+}
+
+.thankyou-mention.clickable:hover {
+  opacity: 0.7;
+}
+
+.copied-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipFade 1.5s ease forwards;
+}
+
+@keyframes tooltipFade {
+  0% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.thankyou-footer {
+  background: var(--color-white);
+  padding: 20px;
+  border-radius: 0 0 18px 18px;
+}
+
+.thankyou-close-btn {
+  width: 100%;
+  height: 50px;
+  border-radius: 10px;
+  background: var(--color-bg-field);
+  border: none;
+  font-family: 'TT Norms Pro Tochka', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 22px;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: center;
+}
+
+.thankyou-close-btn:hover {
+  background: var(--color-bg-field-hover);
+}
 
 /* === Admin Survey Answers === */
 .admin-survey-answers { margin-top: 20px; padding: 20px; background: var(--color-bg-field); border-radius: var(--radius-m); }
