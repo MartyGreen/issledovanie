@@ -751,6 +751,22 @@ function getStats(data) {
   return { total, withClicks, withSurvey, avgClicks, avgDuration, llmDismissed, grades };
 }
 
+function getAiDescStats(data) {
+  const withStats = data.filter(p => p.aiDescStats);
+  if (withStats.length === 0) return null;
+  let descAccepted = 0, descDismissed = 0, fieldsAccepted = 0, fieldsDismissed = 0;
+  withStats.forEach(p => {
+    const s = p.aiDescStats;
+    descAccepted += s.descAccepted || 0;
+    descDismissed += s.descDismissed || 0;
+    fieldsAccepted += s.fieldsAccepted || 0;
+    fieldsDismissed += s.fieldsDismissed || 0;
+  });
+  const totalDesc = descAccepted + descDismissed;
+  const totalFields = fieldsAccepted + fieldsDismissed;
+  return { withStats: withStats.length, descAccepted, descDismissed, totalDesc, fieldsAccepted, fieldsDismissed, totalFields };
+}
+
 function getSurveyStats(data) {
   const withSurvey = data.filter(p => p.surveyAnswers);
   if (withSurvey.length === 0) return null;
@@ -814,6 +830,36 @@ function render() {
       </div>
     </div>
   `;
+
+  // AI Description stats
+  const aiStats = getAiDescStats(participants);
+  if (aiStats) {
+    const descAccPct = aiStats.totalDesc > 0 ? Math.round(aiStats.descAccepted / aiStats.totalDesc * 100) : 0;
+    const fieldsAccPct = aiStats.totalFields > 0 ? Math.round(aiStats.fieldsAccepted / aiStats.totalFields * 100) : 0;
+    html += `
+      <div class="card">
+        <div class="card-title">AI-описания · ${aiStats.withStats} участников</div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">Описание таблицы</div>
+            <div style="display:flex;gap:12px;margin-top:6px;align-items:baseline;">
+              <span style="font-size:24px;font-weight:700;color:#3F9180;">✓ ${aiStats.descAccepted}</span>
+              <span style="font-size:24px;font-weight:700;color:#f98e88;">✕ ${aiStats.descDismissed}</span>
+              <span style="font-size:13px;color:var(--color-secondary);">(${descAccPct}% принято)</span>
+            </div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">Описания полей</div>
+            <div style="display:flex;gap:12px;margin-top:6px;align-items:baseline;">
+              <span style="font-size:24px;font-weight:700;color:#3F9180;">✓ ${aiStats.fieldsAccepted}</span>
+              <span style="font-size:24px;font-weight:700;color:#f98e88;">✕ ${aiStats.fieldsDismissed}</span>
+              <span style="font-size:13px;color:var(--color-secondary);">(${fieldsAccPct}% принято)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   // Survey summary
   if (surveyStats) {

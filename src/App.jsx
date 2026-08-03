@@ -1458,6 +1458,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
     if (llmDescSuggestion) {
       setDescription(llmDescSuggestion)
       setLlmDescSuggestion(null)
+      aiStatsRef.current.descAccepted++
     }
   }
 
@@ -1518,6 +1519,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         delete updated[idx]
         return updated
       })
+      aiStatsRef.current.fieldsAccepted++
     }
   }
 
@@ -1597,6 +1599,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         sessionDuration: clicks.length > 0 ? clicks[clicks.length - 1].ts : 0,
         formData: sessionData.formData,
         savedAt: sessionData.savedAt,
+        aiDescStats: { ...aiStatsRef.current },
       })
     }
 
@@ -1627,6 +1630,9 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
     setShowSurvey(false)
     setShowThankYou(true)
   }
+
+  // AI description tracking
+  const aiStatsRef = useRef({ descAccepted: 0, descDismissed: 0, fieldsAccepted: 0, fieldsDismissed: 0 })
 
   const [llmDismissed, setLlmDismissed] = useState(false)
 
@@ -1718,7 +1724,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
               disableGenerate={!canGenerate}
               llmSuggestion={llmDescSuggestion}
               onAcceptSuggestion={acceptDescSuggestion}
-              onDismissSuggestion={() => setLlmDescSuggestion(null)}
+              onDismissSuggestion={() => { setLlmDescSuggestion(null); aiStatsRef.current.descDismissed++ }}
             />
 
             {/* Теги */}
@@ -1741,6 +1747,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
                     delete updated[idx]
                     return updated
                   })
+                  aiStatsRef.current.fieldsDismissed++
                 }}
               />
             )}
