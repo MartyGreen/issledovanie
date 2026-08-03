@@ -875,7 +875,7 @@ function render() {
           ${participants.map((p, i) => `
             <div class="data-row" onclick="showDetail(${i})">
               <div class="data-cell col-num" style="color:var(--color-secondary);">${i + 1}</div>
-              <div class="data-cell col-name name">${p.firstName || ''} ${p.lastName || ''}</div>
+              <div class="data-cell col-name name">Испытуемый №${i + 1}</div>
               <div class="data-cell col-grade"><span class="badge badge-purple">${p.grade || '—'}</span></div>
               <div class="data-cell col-position">${p.position || '—'}</div>
               <div class="data-cell col-clicks"><span class="click-count">${p.totalClicks || 0}</span></div>
@@ -951,7 +951,7 @@ function showDetail(index) {
   overlay.innerHTML = `
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">${p.firstName || ''} ${p.lastName || ''}</div>
+        <div class="modal-title">Испытуемый №${index + 1}</div>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
       </div>
 
@@ -1071,7 +1071,7 @@ function showConfirmModal(name, onConfirm) {
 function deleteParticipant(index) {
   const p = participants[index];
   if (!p || !p._key) return;
-  const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'участника';
+  const name = `Испытуемый №${index + 1}`;
 
   showConfirmModal(name, async () => {
     try {
