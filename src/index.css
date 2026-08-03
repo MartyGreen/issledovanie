@@ -394,7 +394,30 @@ body {
   pointer-events: auto;
 }
 
+.llm-panel-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-bg-field);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-secondary);
+  transition: background 0.15s, color 0.15s;
+  z-index: 2;
+}
+.llm-panel-close:hover {
+  background: var(--color-divider);
+  color: var(--color-primary);
+}
+
 .llm-panel-content {
+  position: relative;
   background: var(--color-white);
   border-radius: var(--radius-xl);
   box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.05);

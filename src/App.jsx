@@ -524,10 +524,15 @@ function AIGenerateLabel({ text = 'Сгенерировать общее опи�
 }
 
 /* ===== LLM Right Panel ===== */
-function LLMPanel({ onGenerate, isGenerating, generationDone, visible }) {
+function LLMPanel({ onGenerate, isGenerating, generationDone, visible, onDismiss }) {
   return (
     <div className={`llm-panel ${visible ? 'visible' : ''}`}>
       <div className="llm-panel-content">
+        {onDismiss && (
+          <button className="llm-panel-close" onClick={onDismiss} title="Закрыть">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
+        )}
         <div className="llm-panel-text">
           <h3 className="llm-panel-title">Генерация описания LLM</h3>
           <p className="llm-panel-description">
@@ -1623,8 +1628,21 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
     setShowThankYou(true)
   }
 
+  const [llmDismissed, setLlmDismissed] = useState(false)
+
+  const handleDismissLLM = () => {
+    setLlmDismissed(true)
+    // Отправляем событие в Firebase
+    if (currentUser?._firebaseKey) {
+      firebaseUpdate(`participants/${currentUser._firebaseKey}`, {
+        llmBannerDismissed: true,
+        llmBannerDismissedAt: new Date().toISOString(),
+      })
+    }
+  }
+
   const canGenerate = storageEnabled && database && schema && table
-  const showLLMPanel = canGenerate
+  const showLLMPanel = canGenerate && !llmDismissed
 
   return (
     <div className="layout">
@@ -1736,7 +1754,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
         </main>
 
         {/* Правая панель LLM — плавно появляется после заполнения хранилища */}
-        <LLMPanel onGenerate={generateAll} isGenerating={isGeneratingAll} generationDone={generationDone} visible={showLLMPanel} />
+        <LLMPanel onGenerate={generateAll} isGenerating={isGeneratingAll} generationDone={generationDone} visible={showLLMPanel} onDismiss={handleDismissLLM} />
       </div>
 
       {/* Опросник после сохранения */}

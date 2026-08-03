@@ -745,9 +745,10 @@ function getStats(data) {
   const withSurvey = data.filter(p => p.surveyAnswers).length;
   const avgClicks = total > 0 ? Math.round(data.reduce((s, p) => s + (p.totalClicks || 0), 0) / total) : 0;
   const avgDuration = total > 0 ? Math.round(data.reduce((s, p) => s + (p.sessionDuration || 0), 0) / total / 1000) : 0;
+  const llmDismissed = data.filter(p => p.llmBannerDismissed).length;
   const grades = {};
   data.forEach(p => { grades[p.grade] = (grades[p.grade] || 0) + 1; });
-  return { total, withClicks, withSurvey, avgClicks, avgDuration, grades };
+  return { total, withClicks, withSurvey, avgClicks, avgDuration, llmDismissed, grades };
 }
 
 function getSurveyStats(data) {
@@ -806,6 +807,10 @@ function render() {
       <div class="stat-card">
         <div class="stat-label">Ср. время сессии</div>
         <div class="stat-value">${stats.avgDuration} сек</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Закрыли LLM-баннер</div>
+        <div class="stat-value orange">${stats.llmDismissed}</div>
       </div>
     </div>
   `;
