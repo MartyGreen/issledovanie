@@ -145,17 +145,22 @@ body {
 }
 
 /* Логотип */
-/* Logo dot pulse animation */
+/* Logo dot heartbeat animation — triggers on nav hover */
 .logo-dot {
+  transform-box: fill-box;
   transform-origin: center;
   transition: transform 0.3s ease;
 }
 .logo-dot.pulsing {
-  animation: logo-pulse 1.2s ease-in-out infinite;
+  animation: logo-heartbeat 0.85s ease-in-out infinite;
 }
-@keyframes logo-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.7; }
+@keyframes logo-heartbeat {
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.4); }
+  28%  { transform: scale(0.95); }
+  42%  { transform: scale(1.25); }
+  56%  { transform: scale(1); }
+  100% { transform: scale(1); }
 }
 
 .sidebar-logo {
@@ -176,6 +181,7 @@ body {
   margin-left: 20px;
   display: flex;
   flex-direction: column;
+  gap: 5px;
 }
 
 .sidebar-menu-group.map-group {
