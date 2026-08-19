@@ -1748,7 +1748,7 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
             <TextEditor
               value={description}
               onChange={setDescription}
-              placeholder="Введите описание документа..."
+              placeholder="Введите описание"
               isGenerating={isGenerating}
               onGenerate={generateAIDescription}
               disableGenerate={!canGenerate}
