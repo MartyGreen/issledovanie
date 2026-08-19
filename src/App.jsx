@@ -1664,7 +1664,11 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
       <div className="main-area">
         <main className="main-content">
           <div className="navbar">
-            <h1 className="navbar-title">Новый документ</h1>
+            <div className="navbar-tabs">
+              <button className="navbar-tab active">Ввод нового</button>
+              <button className="navbar-tab">Поиск</button>
+              <button className="navbar-tab">Витрины</button>
+            </div>
             <a href={`${import.meta.env.BASE_URL}dashboard.html`} target="_blank" rel="noopener noreferrer" className="secret-dash-link" aria-hidden="true" tabIndex={-1} />
           </div>
 
@@ -1761,7 +1765,8 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
             )}
 
             <div className="footer">
-              <button className="save-button" onClick={handleSave}>
+              <button className="footer-btn secondary">Отменить</button>
+              <button className="footer-btn primary" onClick={handleSave}>
                 Сохранить
               </button>
             </div>
