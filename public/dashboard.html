@@ -372,6 +372,7 @@
   .col-clicks { width: 70px; flex-shrink: 0; justify-content: center; }
   .col-session { width: 90px; flex-shrink: 0; }
   .col-survey { width: 90px; flex-shrink: 0; justify-content: center; }
+  .col-ai { width: 160px; flex-shrink: 0; }
   .col-date { width: 130px; flex-shrink: 0; }
   .col-actions { width: 140px; flex-shrink: 0; justify-content: flex-end; gap: 4px; }
 
@@ -668,27 +669,6 @@
     </div>
 
     <nav class="sidebar-nav">
-      <div class="sidebar-menu-group">
-        <div class="sidebar-item active">
-          <span class="sidebar-item-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" stroke="#835de1" stroke-width="1.5"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="#835de1" stroke-width="1.5"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="#835de1" stroke-width="1.5"/><rect x="13" y="13" width="8" height="8" rx="2" stroke="#835de1" stroke-width="1.5"/></svg>
-          </span>
-          Обзор
-        </div>
-        <div class="sidebar-item">
-          <span class="sidebar-item-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="#949494" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#949494" stroke-width="1.5"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke="#949494" stroke-width="1.5" stroke-linecap="round"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="#949494" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Участники
-        </div>
-        <div class="sidebar-item">
-          <span class="sidebar-item-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4" stroke="#949494" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="#949494" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          Опросы
-        </div>
-      </div>
-
       <div class="sidebar-spacer"></div>
 
       <div class="sidebar-bottom">
@@ -741,10 +721,11 @@ function formatDuration(ms) {
 
 function getStats(data) {
   const total = data.length;
+  const completed = data.filter(p => p.savedAt);
   const withClicks = data.filter(p => p.totalClicks > 0).length;
   const withSurvey = data.filter(p => p.surveyAnswers).length;
-  const avgClicks = total > 0 ? Math.round(data.reduce((s, p) => s + (p.totalClicks || 0), 0) / total) : 0;
-  const avgDuration = total > 0 ? Math.round(data.reduce((s, p) => s + (p.sessionDuration || 0), 0) / total / 1000) : 0;
+  const avgClicks = completed.length > 0 ? Math.round(completed.reduce((s, p) => s + (p.totalClicks || 0), 0) / completed.length) : 0;
+  const avgDuration = completed.length > 0 ? Math.round(completed.reduce((s, p) => s + (p.sessionDuration || 0), 0) / completed.length / 1000) : 0;
   const llmDismissed = data.filter(p => p.llmBannerDismissed).length;
   const grades = {};
   data.forEach(p => { grades[p.grade] = (grades[p.grade] || 0) + 1; });
@@ -754,17 +735,35 @@ function getStats(data) {
 function getAiDescStats(data) {
   const withStats = data.filter(p => p.aiDescStats);
   if (withStats.length === 0) return null;
-  let descAccepted = 0, descDismissed = 0, fieldsAccepted = 0, fieldsDismissed = 0;
+  let descAccepted = 0, descDismissed = 0, descEdited = 0, fieldsAccepted = 0, fieldsDismissed = 0, fieldsEdited = 0;
   withStats.forEach(p => {
     const s = p.aiDescStats;
     descAccepted += s.descAccepted || 0;
     descDismissed += s.descDismissed || 0;
+    descEdited += s.descEdited || 0;
     fieldsAccepted += s.fieldsAccepted || 0;
     fieldsDismissed += s.fieldsDismissed || 0;
+    fieldsEdited += s.fieldsEdited || 0;
   });
-  const totalDesc = descAccepted + descDismissed;
-  const totalFields = fieldsAccepted + fieldsDismissed;
-  return { withStats: withStats.length, descAccepted, descDismissed, totalDesc, fieldsAccepted, fieldsDismissed, totalFields };
+  const totalDesc = descAccepted + descDismissed + descEdited;
+  const totalFields = fieldsAccepted + fieldsDismissed + fieldsEdited;
+  const n = withStats.length;
+  return {
+    withStats: n,
+    descAccepted: (descAccepted / n).toFixed(1),
+    descDismissed: (descDismissed / n).toFixed(1),
+    descEdited: (descEdited / n).toFixed(1),
+    totalDesc,
+    fieldsAccepted: (fieldsAccepted / n).toFixed(1),
+    fieldsDismissed: (fieldsDismissed / n).toFixed(1),
+    fieldsEdited: (fieldsEdited / n).toFixed(1),
+    totalFields,
+    // Суммарные для расчёта %
+    _descAccepted: descAccepted,
+    _descTotal: totalDesc,
+    _fieldsAccepted: fieldsAccepted,
+    _fieldsTotal: totalFields,
+  };
 }
 
 function getSurveyStats(data) {
@@ -809,14 +808,6 @@ function render() {
         <div class="stat-value brand">${stats.total}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Прошли тест</div>
-        <div class="stat-value green">${stats.withClicks}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Прошли опрос</div>
-        <div class="stat-value">${stats.withSurvey}</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-label">Ср. кликов</div>
         <div class="stat-value orange">${stats.avgClicks}</div>
       </div>
@@ -831,35 +822,6 @@ function render() {
     </div>
   `;
 
-  // AI Description stats
-  const aiStats = getAiDescStats(participants);
-  if (aiStats) {
-    const descAccPct = aiStats.totalDesc > 0 ? Math.round(aiStats.descAccepted / aiStats.totalDesc * 100) : 0;
-    const fieldsAccPct = aiStats.totalFields > 0 ? Math.round(aiStats.fieldsAccepted / aiStats.totalFields * 100) : 0;
-    html += `
-      <div class="card">
-        <div class="card-title">AI-описания · ${aiStats.withStats} участников</div>
-        <div class="summary-grid">
-          <div class="summary-item">
-            <div class="summary-label">Описание таблицы</div>
-            <div style="display:flex;gap:12px;margin-top:6px;align-items:baseline;">
-              <span style="font-size:24px;font-weight:700;color:#3F9180;">✓ ${aiStats.descAccepted}</span>
-              <span style="font-size:24px;font-weight:700;color:#f98e88;">✕ ${aiStats.descDismissed}</span>
-              <span style="font-size:13px;color:var(--color-secondary);">(${descAccPct}% принято)</span>
-            </div>
-          </div>
-          <div class="summary-item">
-            <div class="summary-label">Описания полей</div>
-            <div style="display:flex;gap:12px;margin-top:6px;align-items:baseline;">
-              <span style="font-size:24px;font-weight:700;color:#3F9180;">✓ ${aiStats.fieldsAccepted}</span>
-              <span style="font-size:24px;font-weight:700;color:#f98e88;">✕ ${aiStats.fieldsDismissed}</span>
-              <span style="font-size:13px;color:var(--color-secondary);">(${fieldsAccPct}% принято)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
 
   // Survey summary
   if (surveyStats) {
@@ -920,6 +882,7 @@ function render() {
             <div class="data-cell col-clicks">Клики</div>
             <div class="data-cell col-session">Сессия</div>
             <div class="data-cell col-survey">Опрос</div>
+            <div class="data-cell col-ai">AI-описания</div>
             <div class="data-cell col-date">Дата</div>
             <div class="data-cell col-actions"></div>
           </div>
@@ -929,9 +892,10 @@ function render() {
               <div class="data-cell col-name name">Испытуемый №${i + 1}</div>
               <div class="data-cell col-grade"><span class="badge badge-purple">${p.grade || '—'}</span></div>
               <div class="data-cell col-position">${p.position || '—'}</div>
-              <div class="data-cell col-clicks"><span class="click-count">${p.totalClicks || 0}</span></div>
-              <div class="data-cell col-session" style="color:var(--color-secondary);font-size:13px;">${formatDuration(p.sessionDuration)}</div>
+              <div class="data-cell col-clicks">${p.savedAt ? `<span class="click-count">${p.totalClicks || 0}</span>` : '<span style="color:var(--color-placeholder);font-size:12px;">—</span>'}</div>
+              <div class="data-cell col-session" style="color:var(--color-secondary);font-size:13px;">${p.savedAt ? formatDuration(p.sessionDuration) : '<span style="color:#E5952D;font-size:12px;">Не завершён</span>'}</div>
               <div class="data-cell col-survey">${p.surveyAnswers ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-gray">—</span>'}</div>
+              <div class="data-cell col-ai" style="font-size:11px;gap:4px;flex-wrap:wrap;">${p.aiDescStats ? `${(p.aiDescStats.descAccepted||0)+(p.aiDescStats.fieldsAccepted||0) > 0 ? `<span style="color:#3F9180;font-weight:600;">принял ${(p.aiDescStats.descAccepted||0)+(p.aiDescStats.fieldsAccepted||0)}</span>` : ''}${(p.aiDescStats.descEdited||0)+(p.aiDescStats.fieldsEdited||0) > 0 ? `<span style="color:#E5952D;font-weight:600;">отред. ${(p.aiDescStats.descEdited||0)+(p.aiDescStats.fieldsEdited||0)}</span>` : ''}${(p.aiDescStats.descDismissed||0)+(p.aiDescStats.fieldsDismissed||0) > 0 ? `<span style="color:#f98e88;font-weight:600;">откл. ${(p.aiDescStats.descDismissed||0)+(p.aiDescStats.fieldsDismissed||0)}</span>` : ''}` : '<span style="color:var(--color-placeholder);">—</span>'}</div>
               <div class="data-cell col-date" style="color:var(--color-secondary);font-size:13px;">${formatDate(p.registeredAt)}</div>
               <div class="data-cell col-actions" onclick="event.stopPropagation()">
                 <button class="btn btn-secondary btn-sm" onclick="showDetail(${i})">Детали</button>
