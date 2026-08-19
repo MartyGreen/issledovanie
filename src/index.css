@@ -931,7 +931,7 @@ body {
   align-items: flex-start;
   gap: var(--spacing-3x);
   padding: var(--spacing-3x) var(--spacing-4x);
-  background: rgba(131, 93, 225, 0.06);
+  background: rgba(25, 25, 25, 0.05);
   border-radius: var(--radius-m);
   position: relative;
 }
