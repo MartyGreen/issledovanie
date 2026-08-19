@@ -526,6 +526,29 @@ function AIGenerateLabel({ text = 'Сгенерировать общее опи�
   )
 }
 
+/* ===== Contextual Notification (inline) ===== */
+function ContextualNotification({ title, text, onDismiss, visible }) {
+  if (!visible) return null
+  return (
+    <div className="contextual-notification">
+      <div className="contextual-notification-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.25 2.5L5 11.25H10L8.75 17.5L15 8.75H10L11.25 2.5Z" fill="#835de1"/>
+        </svg>
+      </div>
+      <div className="contextual-notification-content">
+        {title && <div className="contextual-notification-title">{title}</div>}
+        {text && <div className="contextual-notification-text">{text}</div>}
+      </div>
+      {onDismiss && (
+        <button className="contextual-notification-close" onClick={onDismiss} title="Закрыть">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+        </button>
+      )}
+    </div>
+  )
+}
+
 /* ===== LLM Right Panel ===== */
 function LLMPanel({ onGenerate, isGenerating, generationDone, visible, onDismiss }) {
   return (
@@ -1732,6 +1755,14 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
               llmSuggestion={llmDescSuggestion}
               onAcceptSuggestion={acceptDescSuggestion}
               onDismissSuggestion={() => { setLlmDescSuggestion(null); aiStatsRef.current.descDismissed++ }}
+            />
+
+            {/* Contextual Notification */}
+            <ContextualNotification
+              title="Попробуйте ИИ-генерацию"
+              text="Заполните основные поля и нажмите «Сгенерировать» — ИИ подготовит описание за вас."
+              visible={canGenerate && !llmDismissed}
+              onDismiss={() => setLlmDismissed(true)}
             />
 
             {/* Теги */}
