@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import html2canvas from 'html2canvas'
 import './index.css'
+import {
+  verifyIncomingJWT,
+  signCompletionJWT,
+  parseAuthParams,
+  clearAuthParams,
+  buildRedirectUrl,
+} from './crypto.js'
 
 /* ===== Firebase Realtime Database (REST API) ===== */
 const FIREBASE_DB_URL = 'https://datagatetest-4f190-default-rtdb.firebaseio.com'
@@ -1388,6 +1395,50 @@ export default function App() {
   })
   const { getClicks, resetClicks } = useClickTracker()
 
+  /* ===== JWT Auth Context ===== */
+  const [authState, setAuthState] = useState(null)      // state-параметр (сквозной)
+  const [jwtPayload, setJwtPayload] = useState(null)    // payload из входящего JWT
+  const [authError, setAuthError] = useState(null)       // ошибка верификации
+  const [authChecked, setAuthChecked] = useState(false)  // проверка завершена
+
+  // При загрузке: парсим URL, верифицируем входящий JWT
+  useEffect(() => {
+    const { state, token } = parseAuthParams()
+
+    if (!token) {
+      // Нет JWT — обычный режим (standalone), пропускаем регистрацию
+      setAuthChecked(true)
+      return
+    }
+
+    // Есть JWT — проверяем подпись
+    verifyIncomingJWT(token).then(result => {
+      if (result.valid) {
+        setAuthState(state)
+        setJwtPayload(result.payload)
+        setAuthError(null)
+        // Пропускаем регистрацию — данные приходят из JWT
+        setPage('main')
+        // Автоматически создаём пользователя из JWT payload
+        const jwtUser = {
+          id: result.payload.sub || `jwt_${Date.now()}`,
+          firstName: result.payload.first_name || 'Участник',
+          lastName: result.payload.last_name || '',
+          grade: result.payload.grade || '',
+          position: result.payload.position || '',
+          registeredAt: new Date().toISOString(),
+          fromJWT: true,
+        }
+        setCurrentUser(jwtUser)
+        localStorage.setItem('research_current_user', JSON.stringify(jwtUser))
+      } else {
+        setAuthError(result.error)
+      }
+      clearAuthParams()
+      setAuthChecked(true)
+    })
+  }, [])
+
   const handleRegistrationComplete = (participant) => {
     setCurrentUser(participant)
     setPage('main')
@@ -1398,8 +1449,53 @@ export default function App() {
   }
 
   const handleBackToMain = () => {
-    // Если пользователь не зарегистрирован, возвращаем на регистрацию
     setPage(currentUser ? 'main' : 'registration')
+  }
+
+  // Если проверка JWT ещё идёт, показываем загрузку
+  if (!authChecked) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', fontFamily: 'inherit', color: 'var(--color-secondary)',
+        flexDirection: 'column', gap: 12,
+      }}>
+        <div style={{
+          width: 32, height: 32, border: '3px solid var(--color-border)',
+          borderTopColor: 'var(--color-brand)', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <span>Проверка авторизации…</span>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
+  // Если JWT невалидный, показываем ошибку
+  if (authError) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100vh', fontFamily: 'inherit',
+        flexDirection: 'column', gap: 16, padding: 40, textAlign: 'center',
+      }}>
+        <div style={{ fontSize: 48 }}>🔒</div>
+        <h2 style={{ margin: 0, color: 'var(--color-primary)' }}>Ошибка авторизации</h2>
+        <p style={{ margin: 0, color: 'var(--color-secondary)', maxWidth: 400, lineHeight: 1.5 }}>
+          {authError}
+        </p>
+        <button
+          onClick={() => { setAuthError(null); setPage('registration') }}
+          style={{
+            marginTop: 8, padding: '12px 24px', background: 'var(--color-brand)',
+            color: '#fff', border: 'none', borderRadius: 12,
+            fontFamily: 'inherit', fontSize: 16, fontWeight: 500, cursor: 'pointer',
+          }}
+        >
+          Продолжить без авторизации
+        </button>
+      </div>
+    )
   }
 
   if (page === 'registration') {
@@ -1416,11 +1512,21 @@ export default function App() {
     setPage('registration')
   }
 
-  return <MainPage currentUser={currentUser} onGoToAdmin={handleGoToAdmin} onLogoClick={handleLogoClick} getClicks={getClicks} resetClicks={resetClicks} />
+  return (
+    <MainPage
+      currentUser={currentUser}
+      onGoToAdmin={handleGoToAdmin}
+      onLogoClick={handleLogoClick}
+      getClicks={getClicks}
+      resetClicks={resetClicks}
+      authState={authState}
+      jwtPayload={jwtPayload}
+    />
+  )
 }
 
 /* ===== Main Page (extracted) ===== */
-function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClicks }) {
+function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClicks, authState, jwtPayload }) {
   const [owner, setOwner] = useState('')
   const [storageEnabled, setStorageEnabled] = useState(true)
   const [storageType, setStorageType] = useState('DWH')
@@ -1807,7 +1913,30 @@ function MainPage({ currentUser, onGoToAdmin, onLogoClick, getClicks, resetClick
       {showSurvey && <SurveyModal onComplete={handleSurveyComplete} />}
 
       {/* Модалка благодарности */}
-      {showThankYou && <ThankYouModal onClose={() => setShowThankYou(false)} />}
+      {showThankYou && <ThankYouModal onClose={async () => {
+        // Если прототип запущен через JWT (от бэкенда) — подписываем подтверждение и редиректим
+        if (jwtPayload?.redirect_url && authState) {
+          try {
+            const completionToken = await signCompletionJWT({
+              sub: jwtPayload.sub,
+              study_id: jwtPayload.study_id,
+              status: 'completed',
+              completed_at: Math.floor(Date.now() / 1000),
+              summary: {
+                total_clicks: savedClicksCount,
+                session_duration_sec: savedSessionDuration,
+              },
+            })
+            const redirectUrl = buildRedirectUrl(jwtPayload.redirect_url, authState, completionToken)
+            window.location.href = redirectUrl
+            return // не скрываем модалку — уходим на редирект
+          } catch (err) {
+            console.error('Ошибка подписи JWT:', err)
+            // Fallback: просто закрываем модалку
+          }
+        }
+        setShowThankYou(false)
+      }} />}
     </div>
   )
 }

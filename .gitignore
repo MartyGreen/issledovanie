@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Криптографические ключи (приватные)
+keys/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
