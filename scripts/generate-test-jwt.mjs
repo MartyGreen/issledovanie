@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Генерирует тестовый JWT от имени бэкенда для проверки прототипа.
- * Использует backend_private.jwk из директории keys/.
+ * Генерирует тестовый JWT от имени бэкенда для проверки прототипа (EdDSA / Ed25519).
+ * Использует backend_private.pem из директории keys/.
  *
  * Запуск: node scripts/generate-test-jwt.mjs [redirect_url]
  *
@@ -24,9 +24,7 @@ const keysDir = resolve(__dirname, '..', 'keys')
 // --- Base64URL утилиты ---
 function base64urlEncode(buffer) {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return Buffer.from(binary, 'binary')
+  return Buffer.from(bytes)
     .toString('base64')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -38,10 +36,13 @@ function encodeJwtPart(obj) {
   return base64urlEncode(new TextEncoder().encode(json))
 }
 
-// --- Чтение ключа ---
-const privateJwk = JSON.parse(
-  readFileSync(resolve(keysDir, 'backend_private.jwk'), 'utf-8'),
-)
+// --- Чтение приватного ключа бэкенда (PEM → PKCS8 DER) ---
+const pemContent = readFileSync(resolve(keysDir, 'backend_private.pem'), 'utf-8')
+const pemBase64 = pemContent
+  .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+  .replace(/-----END PRIVATE KEY-----/g, '')
+  .replace(/\s/g, '')
+const pkcs8Der = Buffer.from(pemBase64, 'base64')
 
 // --- Параметры ---
 const redirectUrl = process.argv[2] || 'https://example.com/callback'
@@ -52,12 +53,12 @@ const studyId = `study_${Math.random().toString(36).slice(2, 10)}`
 // --- Подпись ---
 async function main() {
   const key = await webcrypto.subtle.importKey(
-    'jwk', privateJwk,
-    { name: 'ECDSA', namedCurve: 'P-256' },
+    'pkcs8', pkcs8Der,
+    { name: 'Ed25519' },
     false, ['sign'],
   )
 
-  const header = { alg: 'ES256', typ: 'JWT' }
+  const header = { alg: 'EdDSA', typ: 'JWT' }
   const now = Math.floor(Date.now() / 1000)
   const payload = {
     sub,
@@ -72,14 +73,14 @@ async function main() {
   const signingInput = `${headerB64}.${payloadB64}`
 
   const signature = await webcrypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
+    { name: 'Ed25519' },
     key,
     new TextEncoder().encode(signingInput),
   )
 
   const jwt = `${signingInput}.${base64urlEncode(signature)}`
 
-  console.log('\n🎫 Тестовый JWT (от имени бэкенда):')
+  console.log('\n🎫 Тестовый JWT (от имени бэкенда, EdDSA/Ed25519):')
   console.log('─'.repeat(60))
   console.log(jwt)
   console.log('─'.repeat(60))
@@ -90,7 +91,7 @@ async function main() {
   const devUrl = `http://localhost:5173/?state=${encodeURIComponent(state)}&token=${encodeURIComponent(jwt)}`
   console.log(devUrl)
   console.log(`\n🌐 URL для тестирования (production):`)
-  const prodUrl = `https://<username>.github.io/issledovanie/?state=${encodeURIComponent(state)}&token=${encodeURIComponent(jwt)}`
+  const prodUrl = `https://martygreen.github.io/issledovanie/?state=${encodeURIComponent(state)}&token=${encodeURIComponent(jwt)}`
   console.log(prodUrl)
 }
 

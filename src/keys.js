@@ -1,34 +1,21 @@
 /**
- * Криптографические ключи для JWT (ES256 / ECDSA P-256).
+ * Криптографические ключи для JWT (EdDSA / Ed25519).
  *
- * BACKEND_PUBLIC_KEY   — открытый ключ бэкенда.
+ * BACKEND_PUBLIC_KEY_SPKI — открытый ключ бэкенда (SPKI DER, base64).
  *   Используется прототипом для ПРОВЕРКИ входящего JWT
  *   (бэкенд подписывает своим закрытым ключом).
  *
- * PROTOTYPE_PRIVATE_KEY — закрытый ключ прототипа.
+ * PROTOTYPE_PRIVATE_KEY_PKCS8 — закрытый ключ прототипа (PKCS8 DER, base64).
  *   Используется прототипом для ПОДПИСИ JWT-подтверждения
  *   прохождения исследования.
  *
- * Сгенерировано: scripts/generate-keys.mjs
+ * Ключи предоставлены бэкенд-командой (Ed25519).
  */
 
-// Открытый ключ бэкенда (для проверки входящего JWT)
-export const BACKEND_PUBLIC_KEY = {
-  kty: 'EC',
-  crv: 'P-256',
-  x: 'DabHQu4Q8sYmf_gqaIpZs4zGyr_OOqJnpE46KpKxHDQ',
-  y: 'qxMl0PQ8UCko_nvLbZy6fT9Isl_vIolqb6kEmnJUoGc',
-  ext: true,
-  key_ops: ['verify'],
-}
+// Открытый ключ бэкенда (SPKI DER, base64)
+// PEM: MCowBQYDK2VwAyEAnm2VGHlsWNyNzIRwTIo4ap12BeJCudQk4iz95fBH71k=
+export const BACKEND_PUBLIC_KEY_SPKI = 'MCowBQYDK2VwAyEAnm2VGHlsWNyNzIRwTIo4ap12BeJCudQk4iz95fBH71k='
 
-// Закрытый ключ прототипа (для подписи JWT-подтверждения)
-export const PROTOTYPE_PRIVATE_KEY = {
-  kty: 'EC',
-  crv: 'P-256',
-  x: 'lXAXgpK3boZS8vkP-ark1TXpXnOoRwFEHxfELSDeQXA',
-  y: 'NF8-9Nx9-pZuV7K_mEDGq_kZTz5u0cNiB2QUlsmyuoU',
-  d: 'b26Aa1sfqVDt2BPZMupf8ZPL-fUefqElJGjSjUXajWw',
-  ext: true,
-  key_ops: ['sign'],
-}
+// Закрытый ключ прототипа (PKCS8 DER, base64)
+// PEM: MC4CAQAwBQYDK2VwBCIEIEIg3X+ZM1yzdKlCO543KCveT+2upxJgAXiRiEmaWr2+
+export const PROTOTYPE_PRIVATE_KEY_PKCS8 = 'MC4CAQAwBQYDK2VwBCIEIEIg3X+ZM1yzdKlCO543KCveT+2upxJgAXiRiEmaWr2+'

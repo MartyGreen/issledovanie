@@ -1,5 +1,5 @@
 /**
- * JWT-криптография для прототипа (ES256 / ECDSA P-256).
+ * JWT-криптография для прототипа (EdDSA / Ed25519).
  * Работает через встроенный Web Crypto API — 0 внешних зависимостей.
  *
  * Два сценария:
@@ -7,9 +7,9 @@
  * 2. signCompletionJWT(payload)  — подпись JWT-подтверждения (закрытый ключ прототипа)
  */
 
-import { BACKEND_PUBLIC_KEY, PROTOTYPE_PRIVATE_KEY } from './keys.js'
+import { BACKEND_PUBLIC_KEY_SPKI, PROTOTYPE_PRIVATE_KEY_PKCS8 } from './keys.js'
 
-/* ===== Утилиты Base64URL ===== */
+/* ===== Утилиты Base64 / Base64URL ===== */
 
 function base64urlEncode(buffer) {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer)
@@ -29,6 +29,14 @@ function base64urlDecode(str) {
   return bytes
 }
 
+/** Декодирует стандартный base64 в ArrayBuffer */
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes.buffer
+}
+
 function encodeJwtPart(obj) {
   return base64urlEncode(new TextEncoder().encode(JSON.stringify(obj)))
 }
@@ -37,7 +45,7 @@ function decodeJwtPart(str) {
   return JSON.parse(new TextDecoder().decode(base64urlDecode(str)))
 }
 
-/* ===== Импорт ключей (кэшируются) ===== */
+/* ===== Импорт ключей Ed25519 (кэшируются) ===== */
 
 let _backendPublicKey = null
 let _prototypePrivateKey = null
@@ -45,8 +53,9 @@ let _prototypePrivateKey = null
 async function getBackendPublicKey() {
   if (_backendPublicKey) return _backendPublicKey
   _backendPublicKey = await crypto.subtle.importKey(
-    'jwk', BACKEND_PUBLIC_KEY,
-    { name: 'ECDSA', namedCurve: 'P-256' },
+    'spki',
+    base64ToArrayBuffer(BACKEND_PUBLIC_KEY_SPKI),
+    { name: 'Ed25519' },
     false, ['verify'],
   )
   return _backendPublicKey
@@ -55,8 +64,9 @@ async function getBackendPublicKey() {
 async function getPrototypePrivateKey() {
   if (_prototypePrivateKey) return _prototypePrivateKey
   _prototypePrivateKey = await crypto.subtle.importKey(
-    'jwk', PROTOTYPE_PRIVATE_KEY,
-    { name: 'ECDSA', namedCurve: 'P-256' },
+    'pkcs8',
+    base64ToArrayBuffer(PROTOTYPE_PRIVATE_KEY_PKCS8),
+    { name: 'Ed25519' },
     false, ['sign'],
   )
   return _prototypePrivateKey
@@ -65,7 +75,7 @@ async function getPrototypePrivateKey() {
 /* ===== Верификация входящего JWT ===== */
 
 /**
- * Проверяет JWT, подписанный бэкендом (ES256).
+ * Проверяет JWT, подписанный бэкендом (EdDSA / Ed25519).
  *
  * Ожидаемый payload от бэкенда:
  * { sub, study_id, redirect_url, iat, exp }
@@ -82,7 +92,7 @@ export async function verifyIncomingJWT(token) {
 
     const [headerB64, payloadB64, signatureB64] = parts
     const header = decodeJwtPart(headerB64)
-    if (header.alg !== 'ES256') {
+    if (header.alg !== 'EdDSA') {
       return { valid: false, payload: null, error: `Неподдерживаемый алгоритм: ${header.alg}` }
     }
 
@@ -94,13 +104,13 @@ export async function verifyIncomingJWT(token) {
       return { valid: false, payload, error: 'JWT истёк (exp)' }
     }
 
-    // Проверяем подпись
+    // Проверяем подпись Ed25519
     const key = await getBackendPublicKey()
     const signedData = new TextEncoder().encode(`${headerB64}.${payloadB64}`)
     const signature = base64urlDecode(signatureB64)
 
     const isValid = await crypto.subtle.verify(
-      { name: 'ECDSA', hash: 'SHA-256' },
+      { name: 'Ed25519' },
       key, signature, signedData,
     )
 
@@ -117,13 +127,13 @@ export async function verifyIncomingJWT(token) {
 /* ===== Подпись JWT-подтверждения ===== */
 
 /**
- * Создаёт и подписывает JWT-подтверждение прохождения исследования.
+ * Создаёт и подписывает JWT-подтверждение прохождения исследования (EdDSA / Ed25519).
  *
  * @param {object} payload — данные подтверждения
  * @returns {Promise<string>} — подписанный JWT
  */
 export async function signCompletionJWT(payload) {
-  const header = { alg: 'ES256', typ: 'JWT' }
+  const header = { alg: 'EdDSA', typ: 'JWT' }
   const now = Math.floor(Date.now() / 1000)
   const fullPayload = {
     ...payload,
@@ -136,7 +146,7 @@ export async function signCompletionJWT(payload) {
 
   const key = await getPrototypePrivateKey()
   const signatureBuffer = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: 'SHA-256' },
+    { name: 'Ed25519' },
     key,
     new TextEncoder().encode(`${headerB64}.${payloadB64}`),
   )

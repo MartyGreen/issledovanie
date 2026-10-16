@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Верифицирует JWT-подтверждение, подписанное прототипом.
- * Использует prototype_public.jwk из директории keys/.
+ * Верифицирует JWT-подтверждение, подписанное прототипом (EdDSA / Ed25519).
+ * Использует prototype_public.pem из директории keys/.
  *
  * Запуск: node scripts/verify-completion-jwt.mjs "<jwt_token>"
  *
@@ -29,9 +29,13 @@ if (!token) {
   process.exit(1)
 }
 
-const publicJwk = JSON.parse(
-  readFileSync(resolve(keysDir, 'prototype_public.jwk'), 'utf-8'),
-)
+// --- Чтение публичного ключа прототипа (PEM → SPKI DER) ---
+const pemContent = readFileSync(resolve(keysDir, 'prototype_public.pem'), 'utf-8')
+const pemBase64 = pemContent
+  .replace(/-----BEGIN PUBLIC KEY-----/g, '')
+  .replace(/-----END PUBLIC KEY-----/g, '')
+  .replace(/\s/g, '')
+const spkiDer = Buffer.from(pemBase64, 'base64')
 
 async function main() {
   const parts = token.split('.')
@@ -48,8 +52,8 @@ async function main() {
   console.log('\n📋 Payload:', JSON.stringify(payload, null, 2))
 
   const key = await webcrypto.subtle.importKey(
-    'jwk', publicJwk,
-    { name: 'ECDSA', namedCurve: 'P-256' },
+    'spki', spkiDer,
+    { name: 'Ed25519' },
     false, ['verify'],
   )
 
@@ -57,7 +61,7 @@ async function main() {
   const signature = new Uint8Array(base64urlDecode(signatureB64))
 
   const isValid = await webcrypto.subtle.verify(
-    { name: 'ECDSA', hash: 'SHA-256' },
+    { name: 'Ed25519' },
     key, signature, signedData,
   )
 
